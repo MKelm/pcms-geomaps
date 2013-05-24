@@ -71,12 +71,11 @@ function getCoordinatesByGoogleMaps(address, latDlgId, lngDlgId) {
   googleGeocoder.getLatLng(
     address,
     function(point) {
-      if (typeof point != "undefined" && point != null) {
-        var pointY = point.y;
-        var pointX = point.x;
-      }
-      if (typeof pointY != "undefined" && pointY > 0 &&
-          typeof pointX != "undefined" && pointX > 0) {
+      var pointY = point.y;
+      var pointX = point.x;
+
+      if (pointY != "undefined" && pointY > 0 &&
+          pointX != "undefined" && pointX > 0) {
         document.getElementById(latDlgId).value  = point.y;
         document.getElementById(lngDlgId).value = point.x;
       } else {

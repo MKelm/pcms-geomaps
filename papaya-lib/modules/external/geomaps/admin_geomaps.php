@@ -55,7 +55,7 @@ class admin_geomaps extends base_geomaps {
   }
 
   function admin_geomaps() {
-    $this->__construct();
+    $this->admin_geomaps();
   }
 
   function initialize(&$module, &$images, &$msgs, &$layout, &$authUser) {
@@ -322,7 +322,7 @@ class admin_geomaps extends base_geomaps {
           && $this->addMarkerDialog->checkDialogInput()) {
 
         if ($this->params['marker_lat'] != 0 && $this->params['marker_lng'] != 0) {
-          $this->saveMarker($this->params, TRUE);
+          $this->saveMarker($this->params, $this->addMarkerDialog->data, TRUE);
           $this->initAddMarkerDialog(FALSE);
           $this->loadMarkers($this->params['folder_id']);
 
@@ -357,7 +357,7 @@ class admin_geomaps extends base_geomaps {
             && $this->editMarkerDialog->checkDialogInput()) {
 
           if ($this->params['marker_lat'] != 0 && $this->params['marker_lng'] != 0) {
-            $this->saveMarker($this->params);
+            $this->saveMarker($this->params, $this->editMarkerDialog->data, FALSE);
             $this->loadMarkers($this->params['folder_id']);
 
           } else {
@@ -921,7 +921,7 @@ class admin_geomaps extends base_geomaps {
         'Title', 'isAlphaNum', TRUE, 'input', 200
       ),
       'marker_desc' => array(
-        'Description', 'isSomeText', TRUE, 'simplerichtext', 6
+        'Description', 'isSomeText', FALSE, 'simplerichtext', 6
       ),
       'Coordinates',
       'marker_lat' => array(
@@ -1121,7 +1121,7 @@ class admin_geomaps extends base_geomaps {
       }
 
       $result .= sprintf('<script type="text/javascript" src="%sgeomaps.js" />'.LF,
-        $this->getOption('scripts_path', '/papaya-script/geomaps/'));
+        $this->getOption('scripts_path', '/'));
       $result .= sprintf('<script type="text/javascript"> <![CDATA[ apiType = %d; ]]> </script>'.LF,
         $type);
 
@@ -1446,52 +1446,43 @@ class admin_geomaps extends base_geomaps {
       'key_id', $keyId);
   }
 
-  function saveMarker($params, $new = FALSE) {
+  function saveMarker(&$params, &$data, $new = FALSE) {
     if ($this->params['folder_id'] != $params['marker_folder']) {
       $this->params['folder_id'] = $params['marker_folder'];
       $this->sessionParams = $this->getSessionValue($this->sessionParamName);
       $this->initializeSessionParam('folder_id');
       $this->setSessionValue($this->sessionParamName, $this->sessionParams);
     }
-    if ($new) {
-      $newId = $this->databaseInsertRecord($this->tableMarkers, 'marker_id',
-        array(
-          'marker_folder'  => $params['marker_folder'],
-          'marker_title' => $params['marker_title'],
-          'marker_desc' => $this->addMarkerDialog->data['marker_desc'],
-          'marker_addr_street' => $params['marker_addr_street'],
-          'marker_addr_house' => $params['marker_addr_house'],
-          'marker_addr_zip' => $marker['marker_addr_zip'],
-          'marker_addr_city' => $params['marker_addr_city'],
-          'marker_addr_country' => $params['marker_addr_country'],
-          'marker_lat' => $params['marker_lat'],
-          'marker_lng' => $params['marker_lng']
-        )
-      );
-      if (FALSE !== $newId && $newId > 0) {
-        $this->addMsg(MSG_INFO, sprintf($this->_gt('Marker "%s" (%s) added.'),
-          $params['marker_title'], $newId));
-      }
-      return FALSE !== $newId;
-    } else {
+
+    $existingId = (!empty($params['marker_id']) && $new === FALSE)
+      ? $params['marker_id'] : NULL;
+
+    $id = $this->setMarker(
+      $this->params['folder_id'],
+      $data['marker_title'],
+      $data['marker_lat'],
+      $data['marker_lng'],
+      $data['marker_desc'], // optional
+      $data['marker_addr_street'], // optional
+      $data['marker_addr_house'], // optional
+      $data['marker_addr_zip'], // optional
+      $data['marker_addr_city'], // optional
+      $data['marker_addr_country'], // optional
+      $new, $existingId // add or update
+    );
+
+    if ($new == TRUE && $id !== FALSE) {
+      $this->addMsg(MSG_INFO, sprintf($this->_gt('Marker "%s" (%s) added.'),
+        $params['marker_title'], $id));
+      return TRUE;
+
+    } elseif ($id !== FALSE) {
       $this->addMsg(MSG_INFO, sprintf($this->_gt('Marker "%s" (%s) modified.'),
         $params['marker_title'], $params['marker_id']));
+      return TRUE;
 
-      $data = array(
-        'marker_folder'  => $params['marker_folder'],
-        'marker_title' => $params['marker_title'],
-        'marker_desc' => $this->editMarkerDialog->data['marker_desc'],
-        'marker_addr_street' => $params['marker_addr_street'],
-        'marker_addr_house' => $params['marker_addr_house'],
-        'marker_addr_zip' => $params['marker_addr_zip'],
-        'marker_addr_city' => $params['marker_addr_city'],
-        'marker_addr_country' => $params['marker_addr_country'],
-        'marker_lat' => $params['marker_lat'],
-        'marker_lng' => $params['marker_lng']
-      );
-      return (FALSE !== $this->databaseUpdateRecord($this->tableMarkers,
-        $data, 'marker_id', (int)$params['marker_id']));
     }
+    return FALSE;
   }
 
   function deleteMarker($markerId) {

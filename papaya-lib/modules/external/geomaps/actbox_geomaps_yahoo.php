@@ -239,9 +239,7 @@ class actionbox_geomaps_yahoo extends base_actionbox {
     $xml = '';
 
     if ($this->initOutputObject() === TRUE) {
-      if (function_exists('setDefaultData')) {
-        $this->setDefaultData();
-      }
+      $this->setDefaultData();
 
       // set base data
       $baseData = $this->outputObj->setBaseData(

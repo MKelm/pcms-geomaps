@@ -20,10 +20,8 @@ function initYahooMaps(showCoor, zoomControl, panControl, typeControl,
                        mapType, uniqueId) {
   if (document.getElementById) {
     var mapElement = document.getElementById("map_"+uniqueId);
-    var coorElement = document.getElementById("coor_"+uniqueId);
   } else if (document.all) {
     var mapElement = document.all["map_"+uniqueId];
-    var coorElement = document.all["coor_"+uniqueId];
   }
   if (typeof mapElement != "undefined") {
 
@@ -34,12 +32,11 @@ function initYahooMaps(showCoor, zoomControl, panControl, typeControl,
     window.uniqueId = uniqueId;
 
     yahooMap[uniqueId] = new YMap(mapElement);
-    if (showCoor === 1 && typeof coorElement != "undefined") {
+    if (showCoor === 1) {
       YEvent.Capture(yahooMap[uniqueId], EventsList.MouseClick,
         function(e, point) {
           if (point.Lat && point.Lon) {
-            coorElement.innerHTML = 'Latitude: ' + point.Lat +
-              ' / ' + 'Longitude: ' + point.Lon;
+            coorModeAction(point.Lat, point.Lon);
           }
         }
       );
@@ -141,4 +138,15 @@ function correctZoomLevel() {
   }
 
   return 1;
+}
+
+function coorModeAction(x, y) {
+  if (document.getElementById) {
+    var coorElement = document.getElementById("coor_"+uniqueId);
+  } else if (document.all) {
+    var coorElement = document.all["coor_"+uniqueId];
+  }
+  if (typeof coorElement != "undefined") {
+    coorElement.innerHTML = 'Latitude: '+y+' / '+'Longitude: '+x;
+  }
 }

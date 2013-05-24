@@ -212,7 +212,7 @@ class base_geomaps extends base_db {
   function getDistinctKey($host, $keyType, $useCache = FALSE) {
     if (!empty($host)) {
       if ($useCache === TRUE && !empty($keyType) && count($this->keys) > 0) {
-        foreach ($this->keys as $key) {
+        foreach ($this->keys as &$key) {
           if ($key['key_type'] == $keyType
               && strpos(strtolower($key['key_host']), strtolower($host)) !== FALSE) {
             return $key;
@@ -298,6 +298,55 @@ class base_geomaps extends base_db {
   }
 
   /**
+   * Add or update marker.
+   *
+   * @param integer $folderId Markers folder
+   * @param string $title Title
+   * @param integer $lat Latitude
+   * @param integer $lng Longitude
+   * @param string $description Description (optional)
+   * @param string $street Street (optional)
+   * @param string $house House number (optional)
+   * @param string $zip ZIP code (optional)
+   * @param string $city City name (optional)
+   * @param string $country Country name (optional)
+   * @param boolean $new Set a new marker (optional)
+   * @param integer $existingId Existing marker id (optional)
+   * @return boolean|integer Error status FALSE or marker id
+   */
+  function setMarker($folderId, $title, $lat, $lng,
+                     $description = NULL, $street = NULL, $house = NULL,
+                     $zip = NULL, $city = NULL, $country = NULL,
+                     $new = TRUE, $existingId = NULL) {
+
+    $data = array(
+      'marker_folder' => $folderId,
+      'marker_title' => $title,
+      'marker_desc' => $description,
+      'marker_addr_street' => $street,
+      'marker_addr_house' => $house,
+      'marker_addr_zip' => $zip,
+      'marker_addr_city' => $city,
+      'marker_addr_country' => $country,
+      'marker_lat' => $lat,
+      'marker_lng' => $lng
+    );
+
+    if ($new === TRUE) {
+      $id = $this->databaseInsertRecord($this->tableMarkers,
+        'marker_id', $data);
+    } else {
+      $id = $this->databaseUpdateRecord($this->tableMarkers, $data,
+        'marker_id', $existingId);
+    }
+
+    if ($id !== FALSE && $id > 0) {
+      return $id;
+    }
+    return FALSE;
+  }
+
+  /**
    * Load a list of markers by folder id and get the absolute amount
    *
    * @param integer $folderId
@@ -336,7 +385,7 @@ class base_geomaps extends base_db {
    * @param boolean $useCache use loaded values (optional)
    * @return boolean status
    */
-  function loadMarker($markerId, $useCache = FALSE) {
+  function loadMarker($markerId, $useCache = FALSE, $folderId = NULL) {
     if ($useCache === TRUE && !empty($this->markers[$markerId])) {
       return TRUE;
     }
@@ -347,6 +396,9 @@ class base_geomaps extends base_db {
                    marker_lat, marker_lng
               FROM %s
              WHERE marker_id = %d";
+    if ($folderId !== NULL) {
+      $sql .= " AND marker_folder = ".(int)$folderId;
+    }
     $params = array($this->tableMarkers, $markerId);
 
     if ($res = $this->databaseQueryFmt($sql, $params)) {
@@ -485,6 +537,49 @@ class base_geomaps extends base_db {
       $this->getMarkersBaseKML($markers, '#msn_ylw-pushpin', TRUE)
     );
 
+    return $result;
+  }
+
+  /**
+   * generates a string representing a XHTML drop down menu with map data folders
+   *
+   * @param string $name content of the node attribute 'name'
+   * @param integer $currentFolder identifies the currently selected option
+   * @param array $folders if set it will override the folders defined on object level
+   * @return string XHTML code representing a XHTML drop down menu
+   *
+   * @see papaya_strings::escapeHTMLChars()
+   */
+  function getFoldersComboBox($name, $element, $data, $paramName) {
+    $result = '';
+    $selected = '';
+
+    if (!(is_array($this->folders) && count($this->folders) > 0)) {
+      $this->loadFolders();
+    }
+
+    $result .= sprintf(
+      '<select name="%s[%s]" class="dialogSelect dialogScale">'.LF,
+      $paramName, $name);
+
+    if ($data == 0) {
+      $selected = ' selected="selected"';
+    }
+    $result .= sprintf('<option value="%d"%s>%s</option>', 0,
+      $selected, papaya_strings::escapeHTMLChars($this->_gt('Base')));
+
+    if (isset($this->folders) && is_array($this->folders)
+        && count($this->folders) > 0) {
+      foreach ($this->folders as $folderId => $folder) {
+        $selected = '';
+        if ($data == $folderId) {
+          $selected = ' selected="selected"';
+        }
+        $result .= sprintf('<option value="%d"%s>%s</option>', $folderId,
+          $selected, papaya_strings::escapeHTMLChars($folder['folder_title']));
+      }
+    }
+    $result .= '</select>';
     return $result;
   }
 

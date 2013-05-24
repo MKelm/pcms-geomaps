@@ -99,8 +99,7 @@ class output_geomaps extends base_geomaps {
   function setBaseData($apiType, $coorMode, $noScriptText, $linksTarget) {
 
     $apiKey = $this->getDistinctKey($_SERVER['HTTP_HOST'], $apiType, TRUE);
-
-    if (!empty($apiKey['key_value'])
+    if ($apiKey['key_value'] !== FALSE
         && isset($this->apiTypeNames[$apiType])) {
 
       $this->data['base'] = array(
@@ -110,8 +109,7 @@ class output_geomaps extends base_geomaps {
           'type' => $this->apiTypeNames[$apiType], // string type name
         ),
         'coor_mode' => $coorMode, // int yes/no
-        'scripts_path' => $this->getOption('scripts_path',
-                            '/papaya-script/geomaps/'), // string
+        'scripts_path' => $this->getOption('scripts_path', '/'), // string
         'no_script_text' => $noScriptText, // string text
         'links_target' => $linksTarget // string
       );
@@ -802,49 +800,6 @@ class output_geomaps extends base_geomaps {
       }
     }
 
-    return $result;
-  }
-
-  /**
-   * generates a string representing a XHTML drop down menu with map data folders
-   *
-   * @param string $name content of the node attribute 'name'
-   * @param integer $currentFolder identifies the currently selected option
-   * @param array $folders if set it will override the folders defined on object level
-   * @return string XHTML code representing a XHTML drop down menu
-   *
-   * @see papaya_strings::escapeHTMLChars()
-   */
-  function getFoldersComboBox($name, $element, $data, $paramName) {
-    $result = '';
-    $selected = '';
-
-    if (!(is_array($this->folders) && count($this->folders) > 0)) {
-      $this->loadFolders();
-    }
-
-    $result .= sprintf(
-      '<select name="%s[%s]" class="dialogSelect dialogScale">'.LF,
-      $paramName, $name);
-
-    if ($data == 0) {
-      $selected = ' selected="selected"';
-    }
-    $result .= sprintf('<option value="%d"%s>%s</option>', 0,
-      $selected, papaya_strings::escapeHTMLChars($this->_gt('Base')));
-
-    if (isset($this->folders) && is_array($this->folders)
-        && count($this->folders) > 0) {
-      foreach ($this->folders as $folderId => $folder) {
-        $selected = '';
-        if ($data == $folderId) {
-          $selected = ' selected="selected"';
-        }
-        $result .= sprintf('<option value="%d"%s>%s</option>', $folderId,
-          $selected, papaya_strings::escapeHTMLChars($folder['folder_title']));
-      }
-    }
-    $result .= '</select>';
     return $result;
   }
 

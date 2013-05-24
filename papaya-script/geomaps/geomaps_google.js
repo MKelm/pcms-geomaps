@@ -31,10 +31,8 @@ function initGoogleMaps(showCoor, basicControl, scaleControl,
   if (GBrowserIsCompatible()) {
     if (document.getElementById) {
       var mapElement = document.getElementById("map_"+uniqueId);
-      var coorElement = document.getElementById("coor_"+uniqueId);
     } else if (document.all) {
       var mapElement = document.all["map_"+uniqueId];
-      var coorElement = document.all["coor_"+uniqueId];
     }
 
     // adds google maps unload event
@@ -61,12 +59,11 @@ function initGoogleMaps(showCoor, basicControl, scaleControl,
       googleMaps[uniqueId] = new GMap2(mapElement, {'size' : new GSize(width, height)});
       var googleMap = googleMaps[uniqueId];
 
-      if (showCoor === 1 && typeof coorElement != "undefined") {
+      if (showCoor === 1) {
         GEvent.addListener(googleMap, "click",
           function(googleMap, point) {
             if (point) {
-              coorElement.innerHTML  = 'Latitude: ' + point.y +
-                ' / ' + 'Longitude: ' + point.x;
+              coorModeAction(point.x, point.y);
             }
           }
         );
@@ -236,4 +233,15 @@ function zoomIntoFocus(marker) {
     }
   }
   return 1;
+}
+
+function coorModeAction(x, y) {
+  if (document.getElementById) {
+    var coorElement = document.getElementById("coor_"+uniqueId);
+  } else if (document.all) {
+    var coorElement = document.all["coor_"+uniqueId];
+  }
+  if (typeof coorElement != "undefined") {
+    coorElement.innerHTML = 'Latitude: '+y+' / '+'Longitude: '+x;
+  }
 }

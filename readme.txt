@@ -1,6 +1,6 @@
 *Geo maps modules for papaya CMS 5*
 
-Revision 0.21, 2008-11-10
+Revision 0.22, 2008-11-13
 
 Authors:
 Martin Kelm <martinkelm@idxsolutions.de>
@@ -17,7 +17,6 @@ geomaps@idxsolutions.de
 GNU General Public Licence (GPL): gpl.txt
 
 *General todos / ideas / whishes*
-- Connector module
 - More colors for dynamic markers
 - OpenLayers support
 - Use xslt parser for KML export
@@ -25,6 +24,12 @@ GNU General Public Licence (GPL): gpl.txt
 - Import for KML, ...
 
 *Changelog*
+
+_Rev. 0.22 (2008-11-13)_
+- Added connector with two methods (folders list, add marker)
+- Improved method to save new markers and fixed zip code
+- Changed description to optional parameter
+- Added seperate js function for coordinates mode
 
 _Rev. 0.21 (2008-11-10)_
 - Fixed PHP4 compatibility

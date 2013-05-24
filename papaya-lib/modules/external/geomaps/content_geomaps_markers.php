@@ -101,15 +101,13 @@ class content_geomaps_markers extends base_content {
   * Get parsed data
   *
   * @access public
-  * @return string xml
+  * @return string
   */
   function getParsedData() {
-    $xml = '';
+    $this->setDefaultData();
+    $result = '';
 
     if ($this->initOutputObject() === TRUE) {
-      if (function_exists('setDefaultData')) {
-        $this->setDefaultData();
-      }
 
       // load makers of specified folder
       if ($this->data['folder_by_parameter'] == 1 &&
@@ -121,21 +119,22 @@ class content_geomaps_markers extends base_content {
 
       // show markers xml if any exists
       if (count($this->outputObj->markers) > 0) {
-        $xml = sprintf('<markers base-kml="%d">'.LF, @$this->params['base_kml']);
+        $result = sprintf('<markers base-kml="%d">'.LF,
+          @$this->params['base_kml']);
 
         // get base kml for internal ajax communication
         if (isset($this->params['base_kml']) && $this->params['base_kml'] == 1) {
-          $xml .= $this->outputObj->getMarkersBaseKML(NULL);
+          $result .= $this->outputObj->getMarkersBaseKML(NULL);
 
         } else {
           // get full kml for regular outputs
-          $xml .= $this->outputObj->getMarkersKML(NULL);
+          $result .= $this->outputObj->getMarkersKML(NULL);
         }
-        $xml .= '</markers>'.LF;
+        $result .= '</markers>'.LF;
       }
     }
 
-    return $xml;
+    return $result;
   }
 
 }
