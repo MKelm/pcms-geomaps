@@ -6,11 +6,11 @@
  * @link http://www.idxsolutions.de
  * @licence GNU General Public Licence (GPL) 2 http://www.gnu.org/copyleft/gpl.html
  *
- * You can redistribute and/or modify this script under the terms of the GNU General
- * Public License (GPL) version 2, provided that the copyright and license notes,
- * including these lines, remain unmodified. This script is distributed in the hope that
- * it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * You can redistribute and/or modify this script under the terms of the GNU General Public
+ * License (GPL) version 2, provided that the copyright and license notes, including these
+ * lines, remain unmodified. This script is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.
  *
  * @package module_geomaps
  * @author Martin Kelm <martinkelm@idxsolutions.de>
@@ -40,22 +40,18 @@ class content_geomaps_markers extends base_content {
     'default_folder_id' => array('Default folder', 'isNum', TRUE, 'function',
       'callbackFoldersList'),
     'Icon Decoration',
-    'icon_decoration_image' => array('Dynamic Image', 'isNum', TRUE, 'function',
+    'icon_decoration_image' => array('Dynamic Image', 'isNum', FALSE, 'function',
       'callbackDynamicImages', '', NULL),
-    'icon_thumb_width' => array(
-      'Icon Thumb Width', 'isNoHTML', TRUE, 'input', 100, '', 0
-    ),
-    'icon_thumb_height' => array(
-      'Icon Thumb Height', 'isNoHTML', TRUE, 'input', 100, '', 0
-    )
+    'icon_thumb_width' => array('Icon Thumb Width', 'isNoHTML', TRUE, 'input', 100, '', 0),
+    'icon_thumb_height' => array('Icon Thumb Height', 'isNoHTML', TRUE, 'input', 100, '', 0)
   );
 
   /**
    * Get cache identifier related to given parameters.
    */
   function getCacheId() {
-    return md5('_'.((isset($this->params['ressource_type'])) ?
-        $this->params['ressource_type'] : '').'_'.
+    return md5('_'.
+      ((isset($this->params['ressource_type'])) ? $this->params['ressource_type'] : '').'_'.
       ((isset($this->params['ressource_id'])) ? $this->params['ressource_id'] : '').'_'.
       ((isset($this->params['ressource_lat'])) ? $this->params['ressource_lat'] : '').'_'.
       ((isset($this->params['ressource_lng'])) ? $this->params['ressource_lng'] : '').'_'.

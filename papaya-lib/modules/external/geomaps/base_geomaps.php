@@ -6,11 +6,11 @@
 * @link http://www.idxsolutions.de
 * @licence GNU General Public Licence (GPL) 2 http://www.gnu.org/copyleft/gpl.html
 *
- * You can redistribute and/or modify this script under the terms of the GNU General
- * Public License (GPL) version 2, provided that the copyright and license notes,
- * including these lines, remain unmodified. This script is distributed in the hope that
- * it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+* You can redistribute and/or modify this script under the terms of the GNU General Public
+* License (GPL) version 2, provided that the copyright and license notes, including these
+* lines, remain unmodified. This script is distributed in the hope that it will be useful, but
+* WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+* FOR A PARTICULAR PURPOSE.
 *
 * @package module_geomaps
 * @author Martin Kelm <martinkelm@idxsolutions.de>
@@ -319,7 +319,6 @@ class base_geomaps extends base_db {
               FROM %s
              WHERE folder_id = %d";
     $params = array($this->tableFolders, $folderId);
-
     if ($res = $this->databaseQueryFmt($sql, $params)) {
       if ($row = $res->fetchRow(DB_FETCHMODE_ASSOC)) {
         $this->folders[$row['folder_id']] = $row;
@@ -327,6 +326,28 @@ class base_geomaps extends base_db {
       }
     }
     return FALSE;
+  }
+  
+  /**
+   * Adds a new folder with title and marker icon
+   *
+   * @param string $title
+   * @param string $markerIcon 32-char id
+   * @return boolean status or integer id
+   */
+  function addFolder($title, $markerIcon = '') {
+	$data = array(
+      'folder_title' => $title,
+      'folder_marker_icon' => $markerIcon
+    );
+	$newId = $this->databaseInsertRecord(
+	  $this->tableFolders, 'folder_id', $data
+	);
+	if ($newId > 0) {
+	  return $newId;
+	} else {
+	  return FALSE;
+	} 
   }
 
   /**
@@ -394,6 +415,16 @@ class base_geomaps extends base_db {
       return $id;
     }
     return FALSE;
+  }
+  
+  /**
+   * Deletes all markers in a specified folder
+   * @param integer $folderId
+   * @boolean status
+   */
+  function deleteMarkersByFolder($folderId) {
+    return FALSE != $this->databaseDeleteRecord($this->tableMarkers,
+      'marker_folder', $folderId);
   }
 
   /**
@@ -468,17 +499,11 @@ class base_geomaps extends base_db {
             if (!empty($marker['marker_icon']) && strlen($marker['marker_icon']) == 32) {
 
               if (!isset($iconImageIdsTo[$marker['marker_icon']])) {
-                $dynImage = sprintf(
-                  '%s.image.png?img[image_guid]=%s&img[width]=%d&img[height]=%d',
-                  $imageIdent, $marker['marker_icon'],
-                  $width,
-                  $height
-                );
-                $iconImageIdsTo[$marker['marker_icon']] =
-                  $this->getAbsoluteURL($dynImage);
+                $dynImage = sprintf('%s.image.png?img[image_guid]=%s&img[width]=%d&img[height]=%d',
+                  $imageIdent, $marker['marker_icon'], $width, $height);
+                $iconImageIdsTo[$marker['marker_icon']] = $this->getAbsoluteURL($dynImage);
               }
-              $this->markers[$markerId]['marker_icon'] =
-                $iconImageIdsTo[$marker['marker_icon']];
+              $this->markers[$markerId]['marker_icon'] = $iconImageIdsTo[$marker['marker_icon']];
             }
           }
         }
@@ -535,9 +560,9 @@ class base_geomaps extends base_db {
 
     // Use markers by param or loaded markers
     $markers = (is_array($markers) && count($markers) > 0)
-      ? $markers : $this->markers;
+      ? $markers : $this->markers; 
 
-    if (is_array($markers) && count($markers) > 0) {
+    if (is_array($markers) && count($markers) > 0) {      
       // Get markers xml / kml
       $result = '';
       foreach ($markers as $key => $marker) {
@@ -572,56 +597,57 @@ class base_geomaps extends base_db {
 
         // at a style reference (for google maps compatible kml and custom icons)
         if (!empty($marker['marker_icon'])) {
-          include_once(PAPAYA_INCLUDE_PATH.'system/base_mediadb.php');
-          $mediaDB = base_mediadb::getInstance();
-
-          if (preg_match('#^[a-z\d]{32}$#', $marker['marker_icon']) &&
-              file_exists($mediaDB->getFileName($marker['marker_icon']))) {
-            $iconFile = $this->getAbsoluteURL(
-              $this->getWebMediaLink($marker['marker_icon'], 'media')
-            );
-          } elseif (file_exists(getenv('DOCUMENT_ROOT').'/'.$marker['marker_icon'])) {
-            $iconFile = $this->getAbsoluteURL($marker['marker_icon']);
-          } elseif (checkit::isHTTPX($marker['marker_icon'], TRUE)) {
-            $iconFile = $marker['marker_icon'];
-          } else {
-            $mediaFileUrl = 'http://'.$_SERVER['HTTP_HOST'].'/'.$marker['marker_icon'];
-            if (checkit::isHTTPX($mediaFileUrl, TRUE)) {
-              $iconFile = $mediaFileUrl;
+          
+          if (!isset($mediaDB)) {
+            include_once(PAPAYA_INCLUDE_PATH.'system/base_mediadb.php');
+            $mediaDB = base_mediadb::getInstance();
+            $loadedMarkerIconsXML = array();
+          }
+          
+          if (!isset($loadedMarkerIconsXML[$marker['marker_icon']])) {
+            if (checkit::isGUID($marker['marker_icon'], TRUE)) {
+              $iconFile = $mediaDB->getFileName($marker['marker_icon']);
+              if (!empty($iconFile)) {
+                if ($fixedIconWidth > 0 && $fixedIconHeight > 0) {
+                  $iconSize = array($fixedIconWidth, $fixedIconHeight);
+                } else {
+                  $iconSize = getimagesize($iconFile);
+                }
+                $iconMediaFile = $this->getAbsoluteURL(
+                  $this->getWebMediaLink($marker['marker_icon'], 'media')
+                );
+              }
             }
-          }
+            if (!empty($iconMediaFile) && 
+                (!empty($iconSize[0]) && !empty($iconSize[1]))) {
 
-          if (!($fixedIconHeight > 0 && $fixedIconWidth > 0)) {
-            $iconSize = @getimagesize($iconFile);
-          }
-
-          if (!empty($iconFile) && ((!empty($iconSize[0]) && !empty($iconSize[1])) ||
-                ($fixedIconHeight > 0 && $fixedIconWidth > 0)) ) {
-
-            if ($fixedIconHeight > 0 && $fixedIconWidth > 0) {
-              $iconSize = array(
-                $fixedIconWidth, $fixedIconHeight
+              $loadedMarkerIconsXML[$marker['marker_icon']] = sprintf(
+                '<Style id="customPlacemark%d">'.LF.
+                '<IconStyle>'.LF.
+                '<Icon>'.LF.
+                '<href>%s</href>'.LF.
+                '<size x="%d" y="%d" xunits="pixels" yunits="pixels"/>'.LF.
+                '</Icon>'.LF.
+                '</IconStyle>'.LF.
+                '</Style>'.LF,
+                $key,
+                $iconMediaFile,
+                $iconSize[0], 
+                $iconSize[1]
               );
+              $loadedMarkerIconsXML[$marker['marker_icon']] .= sprintf(
+                '<styleUrl>customPlacemark%d</styleUrl>'.LF, 
+                $key
+              );
+              $result .= $loadedMarkerIconsXML[$marker['marker_icon']];
             }
-
-            $result .= sprintf('<Style id="customPlacemark%d">'.LF.
-                               '<IconStyle>'.LF.
-                               '<Icon>'.LF.
-                               '<href>%s</href>'.LF.
-                               '<size x="%d" y="%d" xunits="pixels" yunits="pixels"/>'.LF.
-                               '</Icon>'.LF.
-                               '</IconStyle>'.LF.
-                               '</Style>'.LF,
-              $key,
-              $iconFile,
-              $iconSize[0], $iconSize[1]
-            );
-            $result .= sprintf('<styleUrl>customPlacemark%d</styleUrl>'.LF, $key);
+          } else {
+            $result .= $loadedMarkerIconsXML[$marker['marker_icon']];
           }
 
         } elseif (!is_null($styleUrl)) {
           $result .= sprintf('<styleUrl>%s</styleUrl>'.LF, $styleUrl);
-        }
+        } 
 
         $result .= '</Placemark>'.LF;
       }
@@ -664,8 +690,7 @@ class base_geomaps extends base_db {
                       '<IconStyle>'.LF.
                       '<scale>1.3</scale>'.LF.
                       '<Icon>'.LF.
-                      '<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png'.
-                      '</href>'.LF.
+                      '<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>'.LF.
                       '</Icon>'.LF.
                       '<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>'.LF.
                       '</IconStyle>'.LF.
@@ -674,8 +699,7 @@ class base_geomaps extends base_db {
                       '<IconStyle>'.LF.
                       '<scale>1.1</scale>'.LF.
                       '<Icon>'.LF.
-                      '<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png'.
-                      '</href>'.LF.
+                      '<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>'.LF.
                       '</Icon>'.LF.
                       '<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>'.LF.
                       '</IconStyle>'.LF.

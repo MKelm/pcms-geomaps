@@ -4,7 +4,7 @@
   <xsl:param name="PAGE_THEME_PATH" />
   <xsl:param name="PAGE_WEB_PATH" />
 
-  <!-- geo maps box template -->
+  <!-- geo maps box template - needs apis and the geo maps di -->
 
   <xsl:output method="xml" encoding="utf-8" standalone="no" indent="no" omit-xml-declaration="yes" />
 
@@ -44,18 +44,22 @@
         <xsl:when test="base/api/@type = 'google'">
           <!-- google maps -->
           <script type="text/javascript" src="http://maps.google.com/maps?file=api&amp;v=2&amp;key={base/api/@key}"><xsl:comment><xsl:text> </xsl:text></xsl:comment></script>
-          <script type="text/javascript" src="{base/@scripts-path}geomaps_google.js"><xsl:comment><xsl:text> </xsl:text></xsl:comment></script>
+          <script type="text/javascript" src="{base/@scripts-path}geomaps-di/google.js"><xsl:comment><xsl:text> </xsl:text></xsl:comment></script>
         </xsl:when>
         <xsl:otherwise>
           <!-- yahoo maps -->
           <script type="text/javascript" src="http://api.maps.yahoo.com/ajaxymap?v=3.4&amp;appid={base/api/@key}"><xsl:comment><xsl:text> </xsl:text></xsl:comment></script>
-          <script type="text/javascript" src="{base/@scripts-path}geomaps_yahoo.js"><xsl:comment><xsl:text> </xsl:text></xsl:comment></script>
+          <script type="text/javascript" src="{base/@scripts-path}geomaps-di/yahoo.js"><xsl:comment><xsl:text> </xsl:text></xsl:comment></script>
         </xsl:otherwise>
       </xsl:choose>
 
       <!-- script to handle map markers -->
       <xsl:if test="markers and markers/@mode != 'hidden'">
-        <script type="text/javascript" src="{base/@scripts-path}geomaps_markers.js"><xsl:comment><xsl:text> </xsl:text></xsl:comment></script>
+        <xsl:if test="base/api/@type = 'google' and markers/@clusterer = 1">
+          <script type="text/javascript" src="{base/@scripts-path}geomaps-di/gmaps-utilities/markerclusterer_packed.js"><xsl:comment><xsl:text> </xsl:text></xsl:comment></script>
+          <script type="text/javascript" src="{base/@scripts-path}geomaps-di/clusterer_styles.js"><xsl:comment><xsl:text> </xsl:text></xsl:comment></script>
+        </xsl:if>
+        <script type="text/javascript" src="{base/@scripts-path}geomaps-di/markers.js"><xsl:comment><xsl:text> </xsl:text></xsl:comment></script>
       </xsl:if>
 
     </xsl:template>
@@ -66,11 +70,12 @@
         <xsl:when test="base/api/@type = 'google'">
           <!-- google maps -->
           <script type="text/javascript"><xsl:comment>
+            var currentUniqueId = '<xsl:value-of select="base/@id" />';
             initGoogleMaps(<xsl:value-of select="base/@coor-mode" />,
               <xsl:value-of select="settings/controls/@basic" />, <xsl:value-of select="settings/controls/@scale" />,
               <xsl:value-of select="settings/controls/@type" />, <xsl:value-of select="settings/controls/@overview" />,
               <xsl:value-of select="settings/center/@lat" />, <xsl:value-of select="settings/center/@lng" />, <xsl:value-of select="settings/@zoom" />,
-              <xsl:value-of select="settings/@type" />, '<xsl:value-of select="base/@id" />',
+              <xsl:value-of select="settings/@type" />, currentUniqueId,
               <xsl:value-of select="settings/@width" />, <xsl:value-of select="settings/@height" />
             );
             <xsl:call-template name="markers-js-content" />
@@ -79,10 +84,11 @@
         <xsl:otherwise>
           <!-- yahoo maps -->
           <script type="text/javascript"><xsl:comment>
+            var currentUniqueId = '<xsl:value-of select="base/@id" />';
             initYahooMaps(<xsl:value-of select="base/@coor-mode" />,
               <xsl:value-of select="settings/controls/@zoom" />, <xsl:value-of select="settings/controls/@pan" />, <xsl:value-of select="settings/controls/@type" />,
               <xsl:value-of select="settings/center/@lat" />, <xsl:value-of select="settings/center/@lng" />, <xsl:value-of select="settings/@zoom" />,
-              <xsl:value-of select="settings/@type" />, '<xsl:value-of select="base/@id" />'
+              <xsl:value-of select="settings/@type" />, currentUniqueId
             );
             <xsl:call-template name="markers-js-content" />
           </xsl:comment></script>
@@ -92,29 +98,40 @@
 
     <xsl:template name="markers-js-content">
       <!-- js content -->
-      initMarkers('<xsl:value-of select="base/@id" />');
+      initMarkers(currentUniqueId);
       <xsl:if test="markers and markers/data-page/@url != ''">
         <xsl:choose>
+          <xsl:when test="count(markers/marker) &gt; 0">
+            geoMarkers[currentUniqueId] = new Array(
+              <xsl:for-each select="markers/marker">
+                new Array(null, '<xsl:copy-of select="description/node()" />', <xsl:value-of select="@lat" />, <xsl:value-of select="@lng" />, 
+                <xsl:choose><xsl:when test="icon/@src">new Array('<xsl:value-of select="icon/@src" />', <xsl:value-of select="icon/@width" />, <xsl:value-of select="icon/@height" />)</xsl:when><xsl:otherwise>null</xsl:otherwise></xsl:choose>)<xsl:if test="position() != last()">, </xsl:if>
+              </xsl:for-each>
+            );
+          </xsl:when>
           <xsl:when test="contains(markers/data-page/@url, '?')">
             <xsl:variable name="url" select="substring-before(markers/data-page/@url, '?')" />
             <xsl:variable name="params" select="substring-after(markers/data-page/@url, '?')" />
             <!-- markers ajax request -->
-            addMarkers('<xsl:value-of select="$url" />', '<xsl:value-of select="$params" />');
+            addMarkers(currentUniqueId, '<xsl:value-of select="$url" />', '<xsl:value-of select="$params" />');
           </xsl:when>
           <xsl:otherwise>
             <!-- markers ajax request -->
-            addMarkers('<xsl:value-of select="markers/data-page/@url" />', '');
+            addMarkers(currentUniqueId, '<xsl:value-of select="markers/data-page/@url" />', '');
           </xsl:otherwise>
         </xsl:choose>
         <!-- get polyline -->
         <xsl:if test="markers/polyline/@active = 1">
-          getPolyline('<xsl:value-of select="markers/polyline/@color" />', '<xsl:value-of select="markers/polyline/@size" />');
+          getPolyline(currentUniqueId, '<xsl:value-of select="markers/polyline/@color" />', '<xsl:value-of select="markers/polyline/@size" />');
         </xsl:if>
+        
         <!-- get / show markers -->
         <xsl:if test="markers/@mode != 'hide'">
-          getMarkers('<xsl:value-of select="markers/@mouse-desc-action" />', '<xsl:value-of select="markers/@mode" />',
-                      <xsl:value-of select="markers/@rotation" />, <xsl:value-of select="markers/@show-description" />,
-                      <xsl:value-of select="markers/@zoom-into-focus" />, '<xsl:value-of select="markers/@color" />');
+          getMarkers(currentUniqueId,
+                     '<xsl:value-of select="markers/@mouse-desc-action" />', '<xsl:value-of select="markers/@mode" />',
+                     <xsl:value-of select="markers/@rotation" />, <xsl:value-of select="markers/@show-description" />,
+                     <xsl:value-of select="markers/@zoom-into-focus" />, '<xsl:value-of select="markers/@color" />',
+                     <xsl:value-of select="markers/@clusterer" />);
         </xsl:if>
       </xsl:if>
     </xsl:template>

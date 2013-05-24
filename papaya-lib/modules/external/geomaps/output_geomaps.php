@@ -6,11 +6,11 @@
  * @link http://www.idxsolutions.de
  * @licence GNU General Public Licence (GPL) 2 http://www.gnu.org/copyleft/gpl.html
  *
- * You can redistribute and/or modify this script under the terms of the GNU General
- * Public License (GPL) version 2, provided that the copyright and license notes,
- * including these lines, remain unmodified. This script is distributed in the hope that
- * it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * You can redistribute and/or modify this script under the terms of the GNU General Public
+ * License (GPL) version 2, provided that the copyright and license notes, including these
+ * lines, remain unmodified. This script is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.
  *
  * @package module_geomaps
  * @author Martin Kelm <martinkelm@idxsolutions.de>
@@ -251,7 +251,7 @@ class output_geomaps extends base_geomaps {
                           $color, $mode, $rotation,
                           $showDescription, $mouseDescAction, $zoomIntoFocus,
                           $polylineActive, $polylineColor, $polylineSize,
-                          $ressourceParams = NULL) {
+                          $ressourceParams = NULL, $clusterer = 0) {
 
     if ($pageId > 0 && !empty($viewMode) && !empty($mouseDescAction)) {
 
@@ -273,8 +273,18 @@ class output_geomaps extends base_geomaps {
           'active' => $polylineActive, // int yes/no
           'color' => $polylineColor, // string color
           'size' => $polylineSize // int size
-        )
+        ),
+        'clusterer' => $clusterer,
+        'loaded_markers' => FALSE
       );
+      
+      // get onload markers if needed
+      if ($mode != 'hide' && 
+          $ressourceType == 'folder' && $ressourceId > 0) {
+        if ($this->loadMarkers($ressourceId) === TRUE) {
+          $this->data['markers']['loaded_markers'] = TRUE;
+        }
+      }
       return TRUE;
     }
 
@@ -292,9 +302,9 @@ class output_geomaps extends base_geomaps {
    */
   function setStaticData($force, $type, $alternativeText,
                          $markersColor, $markersSize, $markersDecoration) {
-
+                           
     if (!empty($type)) {
-
+      
       $this->data['static'] = array(
         'force' => $force, // int yes/no
         'type' => $type, // string static map type
@@ -393,6 +403,63 @@ class output_geomaps extends base_geomaps {
 
     return $xml;
   }
+  
+  function getMarkersBaseXML() {
+    $xml = '';
+    $mt = microtime();
+    if (is_array($this->markers) && $this->markersCount > 0) {
+      foreach ($this->markers as $marker) {
+        $desc = papaya_strings::ensureUTF8($marker['marker_desc']);
+        
+        // get marker icon image if available
+        if (!empty($marker['marker_icon'])) {
+          if (!isset($mediaDB)) {
+            include_once(PAPAYA_INCLUDE_PATH.'system/base_mediadb.php');
+            $mediaDB = base_mediadb::getInstance();
+            $loadedMarkerIcons = array();
+          }
+          if (!isset($loadedMarkerIcons[$marker['marker_icon']])) {
+            if (checkit::isGUID($marker['marker_icon'], TRUE)) {
+              $iconFile = $mediaDB->getFileName($marker['marker_icon']);
+              if (!empty($iconFile)) {
+                $iconSize = getimagesize($iconFile);
+                $iconMediaFile = $this->getAbsoluteURL(
+                  $this->getWebMediaLink($marker['marker_icon'], 'media')
+                );
+              }
+            }
+            if (!empty($iconMediaFile) && 
+                (!empty($iconSize[0]) && !empty($iconSize[1]))) { 
+              $loadedMarkerIcons[$marker['marker_icon']] = array(
+                $iconMediaFile, $iconSize[0], $iconSize[1]
+              );
+            }
+          }
+          if (!empty($loadedMarkerIcons[$marker['marker_icon']])) {
+            $iconXML = sprintf(
+              '<icon src="%s" width="%d" height="%d" />'.LF,
+              $loadedMarkerIcons[$marker['marker_icon']][0],
+              $loadedMarkerIcons[$marker['marker_icon']][1],
+              $loadedMarkerIcons[$marker['marker_icon']][2]
+            );
+          } else {
+            $iconXML = '';
+          }
+        }
+       
+        $xml .= sprintf(
+          '<marker title="%s" lat="%s" lng="%s">'.LF.
+          '<description>%s</description>'.LF.
+          '%s</marker>'.LF,
+          papaya_strings::escapeHTMLChars($marker['marker_title']),
+          $marker['marker_lat'], $marker['marker_lng'],
+          $this->getXHTMLString($desc, FALSE),
+          $iconXML
+        );
+      }
+    }
+    return $xml;
+  }
 
   /**
    * Get markers xml with data like data page, mode, click action, polyline ...
@@ -424,27 +491,33 @@ class output_geomaps extends base_geomaps {
         $this->data['markers']['data_page']['view_mode'],
         $params, $this->paramName
       );
+       
+      // get markers base xml if available
+      if ($this->data['markers']['loaded_markers'] === TRUE) {
+        $markersBaseXML = $this->getMarkersBaseXML();
+      }
 
       // set xml
       $xml = sprintf(
         '<markers mode="%s" rotation="%d" color="%s" zoom-into-focus="%d"'.
-        ' show-description="%d" mouse-desc-action="%s">'.LF.
+        ' show-description="%d" mouse-desc-action="%s" clusterer="%d">'.LF.
         '<data-page url="%s" />'.LF.
         '<polyline active="%d" color="%s" size="%d" />'.LF.
-        '</markers>'.LF,
+        '%s</markers>'.LF,
         $this->data['markers']['mode'],
         $this->data['markers']['rotation'],
         $this->data['markers']['color'],
         $this->data['markers']['zoom_into_focus'],
         $this->data['markers']['show_description'],
         $this->data['markers']['mouse_desc_action'],
+        $this->data['markers']['clusterer'],
         papaya_strings::escapeHTMLChars($dataPageUrl),
         $this->data['markers']['polyline']['active'],
         $this->data['markers']['polyline']['color'],
-        $this->data['markers']['polyline']['size']
+        $this->data['markers']['polyline']['size'],
+        $markersBaseXML
       );
     }
-
     return $xml;
   }
 
@@ -527,7 +600,7 @@ class output_geomaps extends base_geomaps {
         );
 
         $response = file_get_contents($request);
-        if ($response !== FALSE) {
+        if ($response !== false) {
           $phpObj = unserialize($response);
           $url = $phpObj['Result'];
         }
@@ -560,7 +633,7 @@ class output_geomaps extends base_geomaps {
         $output = ($static === TRUE) ? 'html' : '';
 
         if ($static == TRUE) {
-          $zoom = floor($this->data['settings']['zoom'] / 2) - 9;
+          $zoom = floor($this->data['settings']['zoom'] / 2) -9;
           if ($zoom < 0) {
             $zoom = $zoom * -1;
           }
@@ -616,7 +689,7 @@ class output_geomaps extends base_geomaps {
    * @param boolean $static Use a static context
    * @return string link xml or nothing
    */
-  function getPermaLinkXml($static = FALSE) {
+  function getPermaLinkXml($static = FALSE)  {
     $xml = '';
 
     // depends on base and settings data
@@ -683,7 +756,7 @@ class output_geomaps extends base_geomaps {
    * @param boolean $static Use a static context
    * @return string link xml or nothing
    */
-  function getTripPlannerLinkXml($static = FALSE) {
+  function getTripPlannerLinkXml($static = FALSE)  {
     $xml = '';
 
     // depends on base / settings / markers data
@@ -765,7 +838,7 @@ class output_geomaps extends base_geomaps {
               $colorCounter = 0;
             }
           } else {
-            $color = papaya_strings::escapeHTMLChars($dataColor);
+           $color = papaya_strings::escapeHTMLChars($dataColor);
           }
           $marker[] = sprintf('%f,%f,%s%s%s',
             $currentMarker['marker_lat'],
@@ -823,8 +896,8 @@ class output_geomaps extends base_geomaps {
         }
 
         $result = array(
-          'marker_lat' => ($maxLat - $minLat) / 2 + $minLat,
-          'marker_lng' => ($maxLng - $minLng) / 2 + $minLng
+          'marker_lat' => ($maxLat-$minLat)/2 + $minLat,
+          'marker_lng' => ($maxLng-$minLng)/2 + $minLng
         );
       }
     }

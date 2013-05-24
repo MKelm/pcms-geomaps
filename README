@@ -1,21 +1,25 @@
-*Geo maps modules for papaya CMS 5*
-
-Revision 0.26, 2008-08-28
+*Geo Maps DI / PCMS*
 (c) Martin Kelm <martinkelm@idxsolutions.de>
+
+This software package contains 
+-> Geo Maps DI 
+the javascript interface for geographic maps and 
+-> Geo Maps for papaya CMS 
+to mangage and generate compatible html outputs.
 
 Support and good fairy:
 geomaps@idxsolutions.de
 
 *Thanks to*
-Bastian Feder (extensions)
+Bastian Feder (see changelog)
 
-*Templates*
+*PCMS Templates*
 - "box_geomaps.xsl": use a text/html output filter
 - "geomaps_markers.xsl": use a text/xml output filter
 - "geomaps_demo.xsl": use a text/html output filter
 
 *License*
-GNU General Public Licence (GPL): gpl.txt
+GNU General Public Licence (GPL)
 
 *General todos / ideas / whishes*
 - OpenLayers support
@@ -27,7 +31,24 @@ http://www.slideshare.net/kelm/phpug-geo-maps-for-papaya-cms
 
 *Changelog*
 
-_Rev. 0.26 (2009-08-28)
+_Rev. 0.27 (2009-11-16)_
+- Moved frontend javascripts to the geomaps-di project
+- Set license for geomaps-di to GPL3
+- Fixed non-mandatory field in markers page to select a dynamic image
+- Added a connector method to add new folders
+- Fixed markers in yahoo map
+- Added custom markers icon images in yahoo map
+- Fixed connector parameter to set icon images for new markers
+- Added a connector method to delete markers by folder
+- Fixed custom icon loader for media db files
+- Added custom icon caches in php
+- Added onload markers to get a better performance
+- Added markers clusterer support for google maps 
+- Added custom clusterer styles support 
+- Optimized unique id parameters 
+- Added a js method to remove markers
+
+_Rev. 0.26 (2009-08-28)_
 - Removed delete marker function from connector, deprecated
 - Optional ressource parameters
 - RPC page module option

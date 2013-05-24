@@ -1,23 +1,21 @@
 /**
-* Geo maps for papaya CMS 5: Google Maps script
+* Geo Maps DI: Google Maps
 *
 * @copyright 2007-2009 by Martin Kelm - All rights reserved.
 * @link http://www.idxsolutions.de
-* @licence GNU General Public Licence (GPL) 2 http://www.gnu.org/copyleft/gpl.html
+* @licence GNU General Public Licence (GPL) 3 http://www.gnu.org/copyleft/gpl.html
 *
 * You can redistribute and/or modify this script under the terms of the GNU General Public
-* License (GPL) version 2, provided that the copyright and license notes, including these
+* License (GPL) version 3, provided that the copyright and license notes, including these
 * lines, remain unmodified. This script is distributed in the hope that it will be useful, but
 * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 * FOR A PARTICULAR PURPOSE.
 *
-* @package module_geomaps
-* @author Martin Kelm <martinkelm@idxsolutions.de>
-* @author Bastian Feder <info@papaya-cms.com> <extensions>
+* @package geomaps_di
 */
 
 /**
- * initializes the Google Maps API and triggers the rendering of the map
+ * Initializes the Google Maps API and triggers the rendering of the map
  *
  * It depends on the fact that the div-container containing the map will have an id attribute.
  * The id-attribute must contain the string 'map_' + the string represented by the unique
@@ -46,8 +44,7 @@ function initGoogleMaps(showCoor, basicControl, scaleControl,
     if (typeof window.googleMaps == "undefined") {
       window.googleMaps = [];
     }
-    window.uniqueId = uniqueId;
-
+    
     if (typeof mapElement != "undefined") {
 
       /*
@@ -58,12 +55,12 @@ function initGoogleMaps(showCoor, basicControl, scaleControl,
        */
       googleMaps[uniqueId] = new GMap2(mapElement, {'size' : new GSize(width, height)});
       var googleMap = googleMaps[uniqueId];
-
+      
       if (showCoor === 1) {
         GEvent.addListener(googleMap, "click",
           function(googleMap, point) {
             if (point) {
-              coorModeAction(point.x, point.y);
+              coorModeAction(uniqueId, point.x, point.y);
             }
           }
         );
@@ -106,14 +103,14 @@ function initGoogleMaps(showCoor, basicControl, scaleControl,
 
       if (centerLat > -90 && centerLat < 90
           && centerLng > -180 && centerLng < 180 && centerZoom > 0) {
-        centerMap(centerLat, centerLng, centerZoom, mapType);
+        centerMap(uniqueId, centerLat, centerLng, centerZoom, mapType);
       }
     }
   }
 }
 
 /**
- * sets the center point of the map to be shown
+ * Sets the center point of the map to be shown
  *
  * @param float lat latitude of the center point
  * @param float lng longitude of the center point
@@ -121,7 +118,7 @@ function initGoogleMaps(showCoor, basicControl, scaleControl,
  * @param object mapType which type of map shall be displayed
  * @param boolean pan use pan / smooth animation to center
  */
-function centerMap(lat, lng, zoom, mapType, pan) {
+function centerMap(uniqueId, lat, lng, zoom, mapType, pan) {
   var point = new GLatLng(parseFloat(lat), parseFloat(lng));
   if (point && zoom) {
     googleMaps[uniqueId].setCenter(point, zoom);
@@ -139,40 +136,41 @@ function getMarkerPoint(lat, lng) {
   return new GLatLng(parseFloat(lat), parseFloat(lng));
 }
 
-function setMarker(point, markerIdx,
-                   externalIcon, externalIconW, externalIconH) {
+function getMarkerObject(uniqueId, point, markerIdx,
+           customIconImage, customIconWidth, customIconHeight) {
   if (!point) {
-    var point = new GLatLng(parseFloat(geoMarkers[uniqueId][markerIdx][2]),
-                            parseFloat(geoMarkers[uniqueId][markerIdx][3]));
+    var point = new GLatLng(
+      parseFloat(geoMarkers[uniqueId][markerIdx][2]),
+      parseFloat(geoMarkers[uniqueId][markerIdx][3])
+    );
   }
-
+  
   if (point) {
     // set marker with or without icon image
-    if ((externalIcon && externalIconW && externalIconH) ||
-        (geoMarkers[uniqueId][markerIdx][4] &&
-         geoMarkers[uniqueId][markerIdx][4].length == 3)) {
-
-      if (externalIcon && externalIconW && externalIconH) {
-        var new_icon = new GIcon();
-        new_icon.image = externalIcon;
-        var iw = externalIconW;
-        var ih = externalIconH;
-
-      } else {
-        var new_icon = new GIcon();
-        new_icon.image = geoMarkers[uniqueId][markerIdx][4][0];
-        var iw = geoMarkers[uniqueId][markerIdx][4][1];
-        var ih = geoMarkers[uniqueId][markerIdx][4][2];
+    if (geoMarkers[uniqueId][markerIdx][4] &&
+        geoMarkers[uniqueId][markerIdx][4].length == 3) {
+      customIconImage = geoMarkers[uniqueId][markerIdx][4][0];
+      customIconWidth = geoMarkers[uniqueId][markerIdx][4][1];
+      customIconHeight = geoMarkers[uniqueId][markerIdx][4][2];
+    }
+    if (customIconImage && customIconWidth && customIconHeight) {
+      if (typeof window.geoMapsIcons == "undefined") {
+        window.geoMapsIcons = [];
       }
-
-      new_icon.size = new GSize(iw, ih);
-      new_icon.iconAnchor = new GPoint(iw/2,ih);
-      new_icon.infoWindowAnchor = new GPoint(iw/2,ih/2);
-
-      var marker = new GMarker(
-        point, { icon:new_icon, zIndexProcess:markerZIndexProcessEvent }
+      if (typeof geoMapsIcons[customIconImage] == "undefined") {
+        var new_icon = new GIcon();
+        new_icon.image = customIconImage;
+        var iw = customIconWidth;
+        var ih = customIconHeight;
+        new_icon.size = new GSize(iw, ih);
+        new_icon.iconAnchor = new GPoint(iw/2,ih/2);
+        new_icon.infoWindowAnchor = new GPoint(iw/2,ih/2);
+        geoMapsIcons[customIconImage] = new_icon;
+      }
+      var marker = new GMarker( point, 
+        { icon:geoMapsIcons[customIconImage], 
+          zIndexProcess:markerZIndexProcessEvent } 
       );
-
     } else {
       var marker = new GMarker(
         point, { zIndexProcess:markerZIndexProcessEvent }
@@ -182,14 +180,44 @@ function setMarker(point, markerIdx,
     // set description text
     if (geoMarkers[uniqueId][markerIdx][1] &&
         geoMarkers[uniqueId][markerIdx][1].length > 0) {
-
       GEvent.addListener(marker, markerAction, function () {
-        markerListenerEvent(markerIdx);
+        markerListenerEvent(uniqueId, markerIdx);
         marker.openInfoWindowHtml(geoMarkers[uniqueId][markerIdx][1]);
       });
     }
-    googleMaps[uniqueId].addOverlay(marker);
     return marker;
+  }
+}
+
+function setUpMarkers(uniqueId, clusterer) {
+  if (clusterer == 1) {
+    if (typeof geoMapClustererStyles != "undefined") {
+      clustererStyles = { styles: geoMapClustererStyles };
+    } else {
+      clustererStyles = null;
+    }
+    geoMarkerClusterers[uniqueId] = new MarkerClusterer(
+      googleMaps[uniqueId], geoMarkerObjects[uniqueId], clustererStyles
+    );
+  } else {
+    if (geoMarkerObjects[uniqueId].length > 0) {
+      for (var i = 0; i < geoMarkerObjects[uniqueId].length; i++) {
+        googleMaps[uniqueId].addOverlay(geoMarkerObjects[uniqueId][i]);
+      }
+    }
+  }
+}
+
+function removeMarkers(uniqueId) {
+  if (typeof geoMarkerClusterers[uniqueId] != "undefined") {
+    geoMarkerClusterers[uniqueId].clearMarkers();
+    geoMarkerClusterers[uniqueId] = null;
+  } else {
+    if (geoMarkerObjects[uniqueId].length > 0) {
+      for (var i = 0; i < geoMarkerObjects[uniqueId].length; i++) {
+        googleMaps[uniqueId].removeOverlay(geoMarkerObjects[uniqueId][i]);
+      }
+    }
   }
 }
 
@@ -199,29 +227,30 @@ function markerZIndexProcessEvent(marker, b) {
   return 1; // by order
 }
 
-function markerListenerEvent(markerIdx) { }
+function markerListenerEvent(uniqueId, markerIdx) { }
 
-function rotateMarker(i) {
+function rotateMarker(uniqueId, i) {
   var point = new GLatLng(parseFloat(geoMarkers[uniqueId][i][2]),
                           parseFloat(geoMarkers[uniqueId][i][3]));
-  geoMarkers[uniqueId][i][5] = setMarker(point, i);
-
-  if (typeof geoMarkers[uniqueId][i][5]  == "object") {
+  if (typeof geoMarkerObjects[uniqueId][i] != "object") {
+    geoMarkerObjects[uniqueId][i] = getMarkerObject(uniqueId, point, i);
+  }
+  if (typeof geoMarkerObjects[uniqueId][i] == "object") {
+    googleMaps[uniqueId].addOverlay(geoMarkerObjects[uniqueId][i]);
     googleMaps[uniqueId].setCenter(point);
     setTimeout(function() {
       googleMaps[uniqueId].closeInfoWindow();
-      googleMaps[uniqueId].removeOverlay(geoMarkers[uniqueId][i][5]);
-      geoMarkers[uniqueId][i][5] = null;
+      googleMaps[uniqueId].removeOverlay(geoMarkerObjects[uniqueId][i]);
       if (i < geoMarkers[uniqueId].length-1) {
-        rotateMarker(i+1);
+        rotateMarker(uniqueId, i+1);
       } else {
-        rotateMarker(0);
+        rotateMarker(uniqueId, 0);
       }
     }, markerRotationTime);
   }
 }
 
-function setPolyline(color, width) {
+function setPolyline(uniqueId, color, width) {
   var points = new Array();
   for (i = 0; i < geoMarkers[uniqueId].length; i++) {
     points[i] = new GLatLng(geoMarkers[uniqueId][i][2], geoMarkers[uniqueId][i][3]);
@@ -245,11 +274,11 @@ function setPolyline(color, width) {
 }
 
 /**
- * restes the zoom level of displayed google map until every defined marker is in viewport
+ * Sets the zoom level of displayed google map until every defined marker is in viewport
  *
  * @param array marker geodata of a marker
  */
-function zoomIntoFocus(marker) {
+function zoomIntoFocus(uniqueId, marker) {
   // do not zoom higher than the world view ;)
   if (googleMaps[uniqueId].getZoom() == 0) {
     return 0;
@@ -272,7 +301,7 @@ function zoomIntoFocus(marker) {
     // zoom out
     googleMaps[uniqueId].zoomOut();
 
-    if (!zoomIntoFocus(marker)) {
+    if (!zoomIntoFocus(uniqueId, marker)) {
       return 0;
     }
   }
@@ -280,14 +309,14 @@ function zoomIntoFocus(marker) {
     // zoom out
     googleMaps[uniqueId].zoomOut();
 
-    if (!zoomIntoFocus(marker)) {
+    if (!zoomIntoFocus(uniqueId, marker)) {
       return 0;
     }
   }
   return 1;
 }
 
-function coorModeAction(lng, lat) {
+function coorModeAction(uniqueId, lng, lat) {
   if (document.getElementById) {
     var coorElement = document.getElementById("coor_"+uniqueId);
   } else if (document.all) {

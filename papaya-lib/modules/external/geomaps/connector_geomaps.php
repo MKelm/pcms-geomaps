@@ -6,11 +6,11 @@
  * @link http://www.idxsolutions.de
  * @licence GNU General Public Licence (GPL) 2 http://www.gnu.org/copyleft/gpl.html
  *
- * You can redistribute and/or modify this script under the terms of the GNU General
- * Public License (GPL) version 2, provided that the copyright and license notes,
- * including these lines, remain unmodified. This script is distributed in the hope that
- * it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * You can redistribute and/or modify this script under the terms of the GNU General Public
+ * License (GPL) version 2, provided that the copyright and license notes, including these
+ * lines, remain unmodified. This script is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.
  *
  * @package module_geomaps
  * @author Martin Kelm <kelm@idxsolutions.de>
@@ -78,6 +78,7 @@ class connector_geomaps extends base_plugin {
    * @param integer $lat Latitude
    * @param integer $lng Longitude
    * @param string $description Description (optional)
+   * @param string $icon Icon image to show on map (optional)
    * @param string $street Street (optional)
    * @param string $house House number (optional)
    * @param string $zip ZIP code (optional)
@@ -86,12 +87,34 @@ class connector_geomaps extends base_plugin {
    * @param boolean $new Set a new marker (optional)
    * @return boolean|integer Error status FALSE or marker id
    */
-  function addMarker($folderId, $title, $lat, $lng,
+  function addMarker($folderId, $title, $lat, $lng, $icon = NULL,
                      $description = NULL, $street = NULL, $house = NULL,
                      $zip = NULL, $city = NULL, $country = NULL) {
     $baseObj = &$this->getBaseObject();
-    return $baseObj->setMarker($folderId, $title, $lat, $lng, $description,
-      $street, $house, $zip, $city, $country, TRUE, NULL);
+    return $baseObj->setMarker($folderId, $title, $lat, $lng, $icon,
+      $description, $street, $house, $zip, $city, $country, TRUE, NULL);
+  }
+  
+  /**
+   * Deletes all markers in a specified folder
+   * @param integer $folderId
+   * @boolean status
+   */
+  function deleteMarkersByFolder($folderId) {
+    $baseObj = &$this->getBaseObject();
+    return $baseObj->deleteMarkersByFolder($folderId);
+  }
+  
+  /**
+   * Adds a new folder with title and marker icon
+   *
+   * @param string $title
+   * @param string $markerIcon 32-char id
+   * @return boolean status or integer id
+   */
+  function addFolder($title, $markerIcon = '') {
+     $baseObj = &$this->getBaseObject();
+     return $baseObj->addFolder($title, $markerIcon);
   }
 
   /**

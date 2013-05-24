@@ -6,11 +6,11 @@
  * @link http://www.idxsolutions.de
  * @licence GNU General Public Licence (GPL) 2 http://www.gnu.org/copyleft/gpl.html
  *
- * You can redistribute and/or modify this script under the terms of the GNU General
- * Public License (GPL) version 2, provided that the copyright and license notes,
- * including these lines, remain unmodified. This script is distributed in the hope that
- * it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * You can redistribute and/or modify this script under the terms of the GNU General Public
+ * License (GPL) version 2, provided that the copyright and license notes, including these
+ * lines, remain unmodified. This script is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.
  *
  * @package module_geomaps
  * @author Martin Kelm <martinkelm@idxsolutions.de>
@@ -103,6 +103,8 @@ class actionbox_geomaps_google extends base_actionbox {
     'Markers',
     'mrk_active' => array('Active', 'isNum', TRUE, 'yesno',
       NULL, 'Needs a valid KML data, see above.', 0),
+    'mrk_clusterer' => array('Clusterer', 'isNum', TRUE, 'yesno',
+      NULL, NULL, 0),
     'mrk_zoom_into_focus' => array('Zoom Into Focus', 'isNum', TRUE, 'yesno',
       NULL, NULL, 0),
     'mrk_show_description' => array('Show Description', 'isNum', TRUE, 'yesno',
@@ -302,7 +304,9 @@ class actionbox_geomaps_google extends base_actionbox {
           $this->data['mrk_zoom_into_focus'],
           $this->data['mrk_polyline_active'],
           $this->data['mrk_polyline_color'],
-          $this->data['mrk_polyline_size']
+          $this->data['mrk_polyline_size'],
+          NULL,
+          $this->data['mrk_clusterer']
         );
       } else {
         $markersData = TRUE;

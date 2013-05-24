@@ -1,34 +1,44 @@
 /**
-* Geo maps for papaya CMS 5: Markers script
+* Geo Maps DI: Markers script
 *
 * @copyright 2007-2009 by Martin Kelm - All rights reserved.
 * @link http://www.idxsolutions.de
-* @licence GNU General Public Licence (GPL) 2 http://www.gnu.org/copyleft/gpl.html
+* @licence GNU General Public Licence (GPL) 3 http://www.gnu.org/copyleft/gpl.html
 *
 * You can redistribute and/or modify this script under the terms of the GNU General Public
-* License (GPL) version 2, provided that the copyright and license notes, including these
+* License (GPL) version 3, provided that the copyright and license notes, including these
 * lines, remain unmodified. This script is distributed in the hope that it will be useful, but
 * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 * FOR A PARTICULAR PURPOSE.
 *
-* @package module_geomaps
-* @author Martin Kelm <martinkelm@idxsolutions.de>
-* @author Bastian Feder <info@papaya-cms.com> <extensions>
+* @package geomaps_di
 */
 
-function addMarkers(url, params) {
+function initMarkers(uniqueId) {
   // store var in global context
   if (typeof window.geoMarkers == "undefined") {
     window.geoMarkers = [];
   }
+  if (typeof window.geoMarkerObjects == "undefined") {
+    window.geoMarkerObjects = [];
+  }
+  if (typeof window.geoMarkerClusterer == "undefined") {
+    window.geoMarkerClusterers = [];
+  }
+  geoMarkers[uniqueId] = new Array();
+  geoMarkerObjects[uniqueId] = new Array();
+  geoMarkerClusterers[uniqueId] = null;
+}
 
+function addMarkers(uniqueId, url, params) {
   xmlDocument = getMarkersXML(url, params);
   if (xmlDocument) {
-    parseMarkersXML(xmlDocument);
+    parseMarkersXML(xmlDocument, uniqueId);
   }
 }
 
 function getMarkersXML(url, params) {
+
   params = params.replace(/&amp;/g, '&');
 
   // xml http request for Mozilla or IE7
@@ -51,7 +61,7 @@ function getMarkersXML(url, params) {
   var xmlData = '';
   if (typeof xmlRequest != "undefined") {
 
-    if (2 == 2) { // to support all level seperators
+    if (1 == 2) { // for debugging purposes
       xmlRequest.open('GET', url+'?'+params, false);
       xmlRequest.send(null);
     } else { // default
@@ -69,9 +79,17 @@ function getMarkersXML(url, params) {
   return xmlData;
 }
 
-function parseMarkersXML(xmlData) {
+/*
+ * Fills markers array elements:
+ * 0 = null (title not implemented)
+ * 1 = description
+ * 2 = Latitude
+ * 3 = Longitude
+ * 4 = icon ( image, width, height )
+ * GeoMarkerObjects = (for dynamic marker objects)
+ */
+function parseMarkersXML(uniqueId, xmlData) {
   // store var in global context
-  geoMarkers[uniqueId] = new Array();
   var placemarkNodes = xmlData.getElementsByTagName("Placemark");
 
   // tmp vars
@@ -103,7 +121,7 @@ function parseMarkersXML(xmlData) {
     // set marker data
     if (coordinates.length >= 2) {
       geoMarkers[uniqueId][i] = Array();
-      geoMarkers[uniqueId][i][0] = 2;
+      geoMarkers[uniqueId][i][0] = null;
 
       // parse description
       tmp = placemarkNodes[i].getElementsByTagName("description")[0];
@@ -134,12 +152,13 @@ function parseMarkersXML(xmlData) {
         geoMarkers[uniqueId][i][4] = null;
       }
 
-      geoMarkers[uniqueId][i][5] = null; // marker object
+      geoMarkerObjects[uniqueId][i] = null; // marker object
     }
   }
 }
 
-function getMarkers(action, mode, setRotationTime, showDescription, zoomIntoFocus, color) {
+function getMarkers(uniqueId, action, mode, setRotationTime, 
+                    showDescription, zoomIntoFocus, color, clusterer) {
   // store var in global context
   window.markerAction = action;
   description = '';
@@ -153,7 +172,7 @@ function getMarkers(action, mode, setRotationTime, showDescription, zoomIntoFocu
         // store var in global context
         window.markerRotationTime = setRotationTime;
       }
-      rotateMarker(0);
+      rotateMarker(uniqueId, 0);
     }
   } else {
     if (typeof geoMarkers[uniqueId] != "undefined") {
@@ -163,36 +182,37 @@ function getMarkers(action, mode, setRotationTime, showDescription, zoomIntoFocu
         if (!(typeof showDescription != "undefined" && showDescription > 0)) {
           geoMarkers[uniqueId][i][1] = null;
         }
-        geoMarkers[uniqueId][i][5] = setMarker(false, i);
+        geoMarkerObjects[uniqueId][i] = getMarkerObject(uniqueId, false, i);
       }
 
       if (typeof zoomIntoFocus != "undefined" && zoomIntoFocus > 0 &&
           geoMarkers[uniqueId].length > 0) {
-        correctZoomLevel();
+        correctZoomLevel(uniqueId);
       }
     }
   }
+  setUpMarkers(uniqueId, clusterer);
 }
 
-function getPolyline(color, width) {
+function getPolyline(uniqueId, color, width) {
   if (typeof geoMarkers[uniqueId] != "undefined" && geoMarkers[uniqueId].length > 0) {
-    setPolyline(color);
+    setPolyline(uniqueId, color);
   }
 }
 
 /**
- * walks through veuery defined marker and resets the zoom level
+ * Walks through veuery defined marker and resets the zoom level
  *
  * @see zoomIntoFocus() in Google / Yahoo Maps script
  */
-function correctZoomLevel() {
+function correctZoomLevel(uniqueId) {
   if (typeof geoMarkers[uniqueId] != "undefined") {
     var marker = [];
 
     for (var i = 0; i < geoMarkers[uniqueId].length; i++) {
       marker[0] = geoMarkers[uniqueId][i][2]; // latitude
       marker[1] = geoMarkers[uniqueId][i][3]; // longitude
-      zoomIntoFocus(marker);
+      zoomIntoFocus(uniqueId, marker);
     }
   }
 }

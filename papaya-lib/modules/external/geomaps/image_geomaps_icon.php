@@ -6,11 +6,11 @@
  * @link http://www.idxsolutions.de
  * @licence GNU General Public Licence (GPL) 2 http://www.gnu.org/copyleft/gpl.html
  *
- * You can redistribute and/or modify this script under the terms of the GNU General
- * Public License (GPL) version 2, provided that the copyright and license notes,
- * including these lines, remain unmodified. This script is distributed in the hope that
- * it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * You can redistribute and/or modify this script under the terms of the GNU General Public
+ * License (GPL) version 2, provided that the copyright and license notes, including these
+ * lines, remain unmodified. This script is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.
  *
  * @package module_geomaps
  * @author Martin Kelm <martinkelm@idxsolutions.de>
@@ -85,18 +85,14 @@ class image_geomaps_icon extends base_dynamicimage {
     $result = NULL;
 
     // validate anchor image
-    if (empty($this->data['anchor_image_id']) || empty($this->data['anchor_alignment']) ||
-        !($anchorImage = &$controller->getMediaFileImage(
-          $this->data['anchor_image_id']
-        ))) {
+    if (empty($this->data['anchor_image_id']) || empty($this->data['anchor_alignment'])
+        || !($anchorImage = &$controller->getMediaFileImage($this->data['anchor_image_id']))) {
       return $result;
     }
 
     // validate icon image
     if (empty($this->attributes['image_guid']) ||
-        !($iconImage = &$controller->getMediaFileImage(
-          $this->attributes['image_guid']
-        ))) {
+        !($iconImage = &$controller->getMediaFileImage($this->attributes['image_guid']))) {
       return $result;
     }
 
