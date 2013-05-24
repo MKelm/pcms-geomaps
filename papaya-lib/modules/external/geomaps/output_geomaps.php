@@ -2,7 +2,7 @@
 /**
  * Output class for geo maps content
  *
- * @copyright 2007 by Martin Kelm - All rights reserved.
+ * @copyright 2007-2013 by Martin Kelm - All rights reserved.
  * @link http://www.idxsolutions.de
  * @licence GNU General Public Licence (GPL) 2 http://www.gnu.org/copyleft/gpl.html
  *
@@ -13,8 +13,7 @@
  * FOR A PARTICULAR PURPOSE.
  *
  * @package module_geomaps
- * @author Martin Kelm <martinkelm@idxsolutions.de>
- * @author Bastian Feder <info@papaya-cms.com> <extensions>
+ * @author Martin Kelm <martinkelm@shrt.ws>
  */
 
 /**
@@ -26,8 +25,7 @@ require_once(dirname(__FILE__).'/base_geomaps.php');
  * Output for geo maps content
  *
  * @package module_geomaps
- * @author Martin Kelm <martinkelm@idxsolutions.de>
- * @author Bastian Feder <info@papaya-cms.com> <extensions>
+ * @author Martin Kelm <martinkelm@shrt.ws>
  */
 class output_geomaps extends base_geomaps {
 
@@ -113,7 +111,7 @@ class output_geomaps extends base_geomaps {
   function setBaseData($apiType, $coorMode, $noScriptText, $linksTarget) {
 
     $apiKey = $this->getDistinctKey($_SERVER['HTTP_HOST'], $apiType, TRUE);
-    if ((!empty($apiKey['key_value']) || $apiType == 2) &&
+    if ((!empty($apiKey['key_value']) || $apiType == 2 || $apiType == 3) &&
         isset($this->apiTypeNames[$apiType])) {
 
       $this->data['base'] = array(
@@ -202,7 +200,8 @@ class output_geomaps extends base_geomaps {
       // fix zoom value
       $zoom = ($zoom > 0) ? $zoom : 1;
       switch ($this->data['base']['api']['type']) {
-      case $this->apiTypeNames[0]: // google
+      case $this->apiTypeNames[0]: // google v2
+      case $this->apiTypeNames[3]: // google v3
         $zoom = ($zoom < 19) ? $zoom : 18;
         break;
       case $this->apiTypeNames[1]: // yahoo
@@ -365,7 +364,8 @@ class output_geomaps extends base_geomaps {
 
       // get controls xml related to api type
       switch ($this->data['base']['api']['type']) {
-      case $this->apiTypeNames[0]: // google
+      case $this->apiTypeNames[0]: // google v2
+      case $this->apiTypeNames[3]: // google v3
         $controlsXml = sprintf(
           '<controls basic="%d" type="%s" overview="%s" scale="%s" />'.LF,
           $this->data['settings']['controls']['basic'],
@@ -382,7 +382,7 @@ class output_geomaps extends base_geomaps {
           $this->data['settings']['controls']['zoom']
         );
         break;
-      case $this->apiTypeNames[2]: // yahoo
+      case $this->apiTypeNames[2]: // open layers
         $controlsXml = sprintf(
           '<controls type="%s" pan="%s" zoom="%s" />'.LF,
           $this->data['settings']['controls']['type'],
@@ -587,7 +587,8 @@ class output_geomaps extends base_geomaps {
         !empty($this->data['static'])) {
 
       switch ($this->data['base']['api']['type']) {
-      case $this->apiTypeNames[0]: // google
+      case $this->apiTypeNames[0]: // google v2
+      case $this->apiTypeNames[3]: // google v3
 
         $url = sprintf(
           'http://maps.googleapis.com/maps/api/staticmap?'.
@@ -650,7 +651,8 @@ class output_geomaps extends base_geomaps {
         $this->data['settings']['center']['lng'] > 0) {
 
       switch ($this->data['base']['api']['type']) {
-      case $this->apiTypeNames[0]: // google
+      case $this->apiTypeNames[0]: // google v2
+      case $this->apiTypeNames[3]: // google v3
 
         $output = ($static === TRUE) ? 'html' : '';
 
@@ -784,7 +786,8 @@ class output_geomaps extends base_geomaps {
         $permaLink = $this->getPermaLinkUrl($static);
         if (!empty($permaLink)) {
           switch ($this->data['base']['api']['type']) {
-          case $this->apiTypeNames[0]: // google
+          case $this->apiTypeNames[0]: // google v2
+          case $this->apiTypeNames[3]: // google v3
             $url = $permaLink.sprintf('&daddr=%s', $address);
             break;
           case $this->apiTypeNames[1]: // yahoo

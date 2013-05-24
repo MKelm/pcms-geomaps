@@ -46,6 +46,10 @@
         <script type="text/javascript" src="http://maps.google.com/maps?file=api&amp;v=2&amp;key={base/api/@key}"><xsl:comment><xsl:text> </xsl:text></xsl:comment></script>
         <script type="text/javascript" src="{base/@scripts-path}geomaps-di/google.js"><xsl:comment><xsl:text> </xsl:text></xsl:comment></script>
       </xsl:when>
+      <xsl:when test="base/api/@type = 'google3'">
+        <!-- google maps v3 -->
+        <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&amp;sensor=false"><xsl:comment><xsl:text> </xsl:text></xsl:comment></script>
+      </xsl:when>
       <xsl:otherwise>
         <!-- yahoo maps -->
         <script type="text/javascript" src="http://api.maps.yahoo.com/ajaxymap?v=3.4&amp;appid={base/api/@key}"><xsl:comment><xsl:text> </xsl:text></xsl:comment></script>
@@ -80,7 +84,7 @@
         </xsl:comment></script>
       </xsl:when>
       <xsl:when test="base/api/@type = 'google'">
-        <!-- google maps -->
+        <!-- google maps v2 -->
         <script type="text/javascript"><xsl:comment>
           var currentUniqueId = '<xsl:value-of select="base/@id" />';
           initGoogleMaps(<xsl:value-of select="base/@coor-mode" />,
@@ -91,6 +95,25 @@
             <xsl:value-of select="settings/@width" />, <xsl:value-of select="settings/@height" />
           );
           <xsl:call-template name="markers-js-content" />
+        </xsl:comment></script>
+      </xsl:when>
+      <xsl:when test="base/api/@type = 'google3'">
+        <!-- google maps v3 -->
+        <script type="text/javascript"><xsl:comment>
+          var currentUniqueId = '<xsl:value-of select="base/@id" />';
+          var map;
+		  function initialize() {
+			var mapOptions = {
+			  zoom: <xsl:value-of select="settings/@zoom" />,
+			  center: new google.maps.LatLng(
+			    <xsl:value-of select="settings/center/@lat" />, 
+			    <xsl:value-of select="settings/center/@lng" />
+			  ),
+			  mapTypeId: google.maps.MapTypeId.<xsl:value-of select="settings/@type" />
+			};
+			map = new google.maps.Map(document.getElementById('map_<xsl:value-of select="base/@id" />'), mapOptions);
+		  }
+		  google.maps.event.addDomListener(window, 'load', initialize);
         </xsl:comment></script>
       </xsl:when>
       <xsl:otherwise>

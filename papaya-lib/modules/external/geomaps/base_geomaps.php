@@ -2,7 +2,7 @@
 /**
 * Basic class for Geo Maps
 *
-* @copyright 2007-2009 by Martin Kelm - All rights reserved.
+* @copyright 2007-2013 by Martin Kelm - All rights reserved.
 * @link http://www.idxsolutions.de
 * @licence GNU General Public Licence (GPL) 2 http://www.gnu.org/copyleft/gpl.html
 *
@@ -13,7 +13,7 @@
 * FOR A PARTICULAR PURPOSE.
 *
 * @package module_geomaps
-* @author Martin Kelm <martinkelm@idxsolutions.de>
+* @author Martin Kelm <martinkelm@shrt.ws>
 */
 
 /**
@@ -25,7 +25,7 @@ require_once(PAPAYA_INCLUDE_PATH.'system/sys_base_db.php');
 * Basic class for Geo Maps
 *
 * @package module_geomaps
-* @author Martin Kelm <martinkelm@idxsolutions.de>
+* @author Martin Kelm <martinkelm@shrt.ws>
 */
 class base_geomaps extends base_db {
 
@@ -135,14 +135,16 @@ class base_geomaps extends base_db {
     $this->apiTypeNames = array(
       0 => 'google',
       1 => 'yahoo',
-      2 => 'ol'
+      2 => 'ol',
+      3 => 'google3'
     );
 
     // initialize api titles
     $this->apiTypeTitles = array(
       0 => 'Google Maps',
       1 => 'Yahoo Maps',
-      2 => 'Open Layers'
+      2 => 'Open Layers',
+      3 => 'Google Maps'
     );
   }
 

@@ -2,7 +2,7 @@
 /**
  * Dynamic image module to decorate marker icons
  *
- * @copyright 2007 by Martin Kelm - All rights reserved.
+ * @copyright 2007-2013 by Martin Kelm - All rights reserved.
  * @link http://www.idxsolutions.de
  * @licence GNU General Public Licence (GPL) 2 http://www.gnu.org/copyleft/gpl.html
  *
@@ -13,7 +13,7 @@
  * FOR A PARTICULAR PURPOSE.
  *
  * @package module_geomaps
- * @author Martin Kelm <martinkelm@idxsolutions.de>
+ * @author Martin Kelm <martinkelm@shrt.ws>
  */
 
 /**
@@ -25,7 +25,7 @@ require_once(PAPAYA_INCLUDE_PATH.'system/base_dynamicimage.php');
  * Dynamic image module to decorate marker icons
  *
  * @package module_geomaps
- * @author Martin Kelm <martinkelm@idxsolutions.de>
+ * @author Martin Kelm <martinkelm@shrt.ws>
  */
 class image_geomaps_icon extends base_dynamicimage {
 

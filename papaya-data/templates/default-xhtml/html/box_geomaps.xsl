@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns="http://www.w3.org/1999/xhtml">
 <!--
-  @papaya:modules actionbox_geomaps_google, actionbox_geomaps_yahoo, actionbox_geomaps_ol
+  @papaya:modules actionbox_geomaps_google, actionbox_geomaps_google3, actionbox_geomaps_yahoo, actionbox_geomaps_ol
 -->
 
 <!-- import main layout rules, this will import the default rules, too -->

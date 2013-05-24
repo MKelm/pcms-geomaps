@@ -1,6 +1,6 @@
 <?php
 /**
- * Geo maps box for Google Maps
+ * Geo maps box for Google Maps V3
  *
  * @copyright 2007-2013 by Martin Kelm - All rights reserved.
  * @link http://www.idxsolutions.de
@@ -27,15 +27,15 @@ require_once(PAPAYA_INCLUDE_PATH.'system/base_actionbox.php');
  * @package module_geomaps
  * @author Martin Kelm <martinkelm@shrt.ws>
  */
-class actionbox_geomaps_google extends base_actionbox {
+class actionbox_geomaps_google3 extends base_actionbox {
 
   /**
    * List of fields to be configurable in the admin backend
    * @public array $editFields
    */
   var $editFields = array(
-    'base_coor_mode' => array('Coordinates Mode', 'isNum', TRUE, 'yesno',
-       NULL, 'Shows latitude and longitude information on click.', 0),
+    // 'base_coor_mode' => array('Coordinates Mode', 'isNum', TRUE, 'yesno',
+    // NULL, 'Shows latitude and longitude information on click.', 0),
     'base_links_target' => array('Links Target', 'isAlphaNumChar', TRUE, 'combo',
       array('_self' => 'Default', '_blank' => 'New window'), NULL, '_self'),
     'base_no_script_text' => array('No Script Text', 'isSomeText', FALSE,
@@ -44,23 +44,18 @@ class actionbox_geomaps_google extends base_actionbox {
     'Settings',
     'stg_type' => array('Type', 'isAlphaNum', TRUE, 'combo',
       array(
-        'G_NORMAL_MAP' => 'Normal',
-        'G_SATELLITE_MAP' => 'Satellite',
-        'G_HYBRID_MAP' => 'Hybrid',
-        'G_PHYSICAL_MAP' => 'Physical',
-        'G_MOON_VISIBLE_MAP' => 'Moon',
-        'G_MOON_ELEVATION_MAP' => 'Moon (elevation)',
-        'G_MARS_VISIBLE_MAP' => 'Mars',
-        'G_MARS_ELEVATION_MAP' => 'Mars (elevation)',
-        'G_SKY_VISIBLE_MAP' => 'Sky'
-      ), NULL, 'G_NORMAL_MAP'
+        'ROADMAP' => 'Normal',
+        'SATELLITE' => 'Satellite',
+        'HYBRID' => 'Hybrid',
+        'TERRAIN' => 'Physical'
+      ), NULL, 'ROADMAP'
     ),
     'stg_width' => array('Width', 'isNum', TRUE, 'input', 50, NULL, 320),
     'stg_height' => array('Heigth', 'isNum', TRUE, 'input', 50, NULL, 240),
     'stg_zoom' => array('Zoom', 'isNum', TRUE, 'input', 2,
       'Use a value from 1 to 18.', 9),
 
-    'Controls',
+    /*'Controls',
     'stg_ctrl_basic' => array('Navigation And Zoom', 'isNum', TRUE, 'combo',
        array(
          0 => 'Navigation control and zoom bar',
@@ -75,13 +70,13 @@ class actionbox_geomaps_google extends base_actionbox {
       array('true' => 'Yes', 'false' => 'No'), NULL, 'true'),
     'stg_ctrl_scale' => array('Scale information', 'isAlpha', TRUE, 'combo',
       array('true' => 'Yes', 'false' => 'No'), NULL, 'true'),
-
+    */
     'Center',
     'stg_center_mode' => array('Mode', 'isAlpha', TRUE, 'combo',
       array(
-        'default' => 'Use settings',
-        'first_marker' => 'Use first marker',
-        'all_markers' => 'Use markers\' center'
+        'default' => 'Use settings'
+        //'first_marker' => 'Use first marker',
+        //'all_markers' => 'Use markers\' center'
       ), 'Use markers\' center: Check zoom level or activate zoom into focus!',
       'default'
     ),
@@ -90,7 +85,7 @@ class actionbox_geomaps_google extends base_actionbox {
     'stg_center_lng' => array('Longitude', '/[\+\-]?\d+(\.\d+)?/', TRUE, 'input',
       50, NULL, 0),
 
-    'Markers KML',
+    /*'Markers KML',
     'mrk_page_id' => array(
       'Page Id', 'isNum', FALSE, 'pageid', 10,
       'Set a page id greater than zero to use an extern page to load
@@ -101,8 +96,9 @@ class actionbox_geomaps_google extends base_actionbox {
       'callbackViewModesList', 'Select a KML view mode.'),
     'mrk_folder_id' => array('Folder', 'isNum', TRUE, 'function',
       'callbackFoldersList'),
+    */
 
-    'Markers',
+    /*'Markers',
     'mrk_active' => array('Active', 'isNum', TRUE, 'yesno',
       NULL, 'Needs a valid KML data, see above.', 0),
     'mrk_clusterer' => array('Clusterer', 'isNum', TRUE, 'yesno',
@@ -127,19 +123,19 @@ class actionbox_geomaps_google extends base_actionbox {
     ),
     'mrk_rotation' => array('Rotation Interval', 'isNum', TRUE, 'input',
       5, 'In seconds, for rotation mode', 5000),
-
-    'Polyline',
+    */
+    /*'Polyline',
     'mrk_polyline_active' => array('Active', 'isNum', TRUE, 'yesno',
        NULL, 'Needs at least two markers!', 0),
     'mrk_polyline_color' => array('Color', 'isNoHTML', TRUE, 'function',
       'callbackPolylineColors'),
     'mrk_polyline_size' => array('Size', 'isNum', TRUE, 'input', 2, NULL, 5),
-
+    
     'Trip Planner',
     'stg_trippl_active' => array('Active', 'isNum', TRUE, 'yesno',
       NULL, 'Needs one marker as start point.', 0),
     'stg_trippl_caption' => array('Caption', 'isNoHTML', FALSE, 'input',
-      200, NULL, 'Trip planner'),
+      200, NULL, 'Trip planner'),*/
 
     'Static map',
     'stc_active' => array('Active', 'isNum', TRUE, 'yesno', NULL, NULL, 0),
@@ -264,8 +260,8 @@ class actionbox_geomaps_google extends base_actionbox {
 
       // set base data
       $baseData = $this->outputObj->setBaseData(
-        0, // google api
-        $this->data['base_coor_mode'],
+        3, // google api v3
+        0, // $this->data['base_coor_mode'],
         $this->data['base_no_script_text'],
         $this->data['base_links_target']
       );
@@ -276,22 +272,23 @@ class actionbox_geomaps_google extends base_actionbox {
         $this->data['stg_width'],
         $this->data['stg_height'],
         array(
-          'basic' => $this->data['stg_ctrl_basic'],
-          'type' => $this->data['stg_ctrl_type'],
-          'overview' => $this->data['stg_ctrl_overview'],
-          'scale' => $this->data['stg_ctrl_scale']
+          'basic' => 1, //$this->data['stg_ctrl_basic'],
+          'type' => TRUE, //$this->data['stg_ctrl_type'],
+          'overview' => TRUE, //$this->data['stg_ctrl_overview'],
+          'scale' => TRUE //$this->data['stg_ctrl_scale']
         ),
-        $this->data['stg_trippl_active'],
-        $this->data['stg_trippl_caption'],
+        0, //$this->data['stg_trippl_active'],
+        '', //$this->data['stg_trippl_caption'],
         $this->data['stg_zoom'],
         $this->data['stg_center_lat'],
         $this->data['stg_center_lng'],
         $this->data['stg_center_mode'],
-        $this->data['mrk_folder_id']
+        0 //$this->data['mrk_folder_id']
       );
 
       // set markers data
-      if ($this->data['mrk_active'] == 1) {
+      if (isset($this->data['mrk_active']) && 
+          $this->data['mrk_active'] == 1) {
         $markersData = $this->outputObj->setMarkersData(
           $this->data['mrk_page_id'],
           $this->data['mrk_view_mode'],
@@ -331,7 +328,8 @@ class actionbox_geomaps_google extends base_actionbox {
         // get xmls
         $xml = $this->outputObj->getBaseXml();
         $xml .= $this->outputObj->getSettingsXml();
-        if ($this->data['mrk_active'] == 1) {
+        if (isset($this->data['mrk_active']) && 
+            $this->data['mrk_active'] == 1) {
           $xml .= $this->outputObj->getMarkersXml();
         }
         $xml .= $this->outputObj->getPermaLinkXml();

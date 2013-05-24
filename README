@@ -26,6 +26,9 @@ http://cdemo.shrt.ws
 
 *Changelog*
 
+_Rev. 0.30 (2013-04-06)_
+- Added simple Google Maps API V3 map module
+
 _Rev. 0.29 (2013-03-27)_
 - Fixed static google map
 - Improved static google map marker style, color and label
