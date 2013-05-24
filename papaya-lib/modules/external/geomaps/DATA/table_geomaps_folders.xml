@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="ISO-8859-1" ?>
-<table name="gmaps_folders" prefix="yes">
+<table name="geomaps_folders" prefix="yes">
 <fields>
 <field name="folder_id" type="integer" size="4" null="no" autoinc="yes"/>
 <field name="folder_title" type="string" size="200" null="no"/>
 </fields>
 <keys>
 <primary-key><field>folder_id</field></primary-key>
+<key name="sort"><field>folder_title</field></key>
 </keys>
 </table>

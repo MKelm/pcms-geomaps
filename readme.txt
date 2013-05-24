@@ -1,49 +1,74 @@
 *Geo maps modules for papaya CMS 5*
 
-Revision 0.13, 2007-06-27
-Author: Martin Kelm
-E-Mail: martinkelm@idxsolutions.de
+Revision 0.19, 2008-11-02
 
+Authors:
+Martin Kelm <martinkelm@idxsolutions.de>
+Bastian Feder <info@papaya-cms.com> <extensions>
 
-*Get markers data*
-You have to create one markers data page in minimum which uses the
-"gmaps_markers.xsl" template. You can use the page's id for any map box
-later.
+*Template*
+Move "box_geomaps.xsl" to your (x)html template folder.
+Move "geomaps_markers.xsl" to your data template folder.
 
 *Hint for Google Maps*
 You should use this unload event in your body element:
 <body onunload="if (typeof GUnload != 'undefined') GUnload();">
 
-*Geo maps box modules for guestbooks (requirements)*
-- Guestbook module 1.1: http://www.idxsolutions.de/dl-guestbook
-- Current GeoIP databases (extract to "/papaya-lib/external/geoip/"):
-http://www.maxmind.com/download/geoip/database/GeoIP.dat.gz (~1mb)
-http://www.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz (~17mb)
-
-*Template*
-Move "gmaps_markers.xsl" to your template folder.
-
-*CSS*
-Add this css code to your stylesheet:
-div.geoMap {
-	width: 640px; 
-	height: 480px; 
-	border: 1px solid black;
-}
-div.geoMapDesc {
-	width: 350px;
-}
-
 *License*
 GNU General Public Licence (GPL): gpl.txt
 
-
+*General todos*
+- Colors for dynamic markers
+- Optimize data, options and settings handling in output class
+- Extended address data (db)
+- Reimplement markers size / decorations
 
 *Changelog*
 
+_Rev. 0.20 (2008-11-x)_
+- coming soon
+
+_Rev. 0.19 (2008-11-05)_
+- Changed "gmaps" naming to "geomaps" (use DB script to migrate!)
+- Optimized code structure / style and refactored output to get xml only
+- Rebuild box modules for Google Maps and Yahoo Maps
+- Added / extended static map / permalink support for Yahoo / Google Maps
+- Added new box template to get html / js code by xml
+- Fixed coordinates mode in Yahoo Maps and did some other js improvements
+- Enhanced KML export + Google Eath compatibility
+- Added option to use first marker as center point
+- Fixed and added new Google Maps types
+
+_Rev. 0.18 (2008-10-31)_
+- Merged Google Maps extensions by Bastian Feder:
+  * Static Google Map with markers
+  * Permalink to Google Maps
+  * Link to Google Maps trip planer
+  * Zoom Into Focus
+  * Extended marker settings in static maps (colors, size, decoration)
+  * Some JavaScript improvements
+
+_Rev. 0.17 (2008-08-01)_
+- Fixed Firefox3 JS-Bug in coordinates mode
+- Fixed Latitude / Longitude value in KML parser
+- Moved JS-Scripts Folder to own folder
+- Removed CDATA from XSL to get extended HTML descriptions, i.e. embedded videos
+- Fixed edit map api key
+
+_Rev. 0.16 (2008-01-17)_
+- fixed icons / glyphs
+- fixed get coordinates by address again
+- added folder tag to kml export and removed address tag
+- removed guestbook plugin, no longer supported
+
+_Rev. 0.15 (2007-08-18)_
+- moved custom icons to module's pics folder
+- fixed get coordinates by address feature to work in new backend
+- some other optimizations
+
 _Rev. 0.14 (2007-07-11)_
-- Changed icons to new backend icons
-- Added new custom icons based on tango icons
+- changed icons to new backend icons
+- added new custom icons based on tango icons
 
 _Rev. 0.13 (2007-06-27)_
 - added polyline output mode for content box modules

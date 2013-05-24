@@ -3,14 +3,14 @@
   <name>Geo maps</name>
   <description>Geographic maps with marker manager</description>
   <modules>
-    <module type="box" guid="313efa4780ed0a433f46d0aa76f2dfaf" name="Geo maps" class="actionbox_gmaps" file="actbox_gmaps.php" outputfilter="no">Geo maps box using Google Maps or Yahoo Maps API</module>
-    <module type="box" guid="4274485aeeaf1d420b193fc3351030df" name="Geo maps for guestbooks" class="actionbox_gmaps_gb" file="actbox_gmaps_gb.php" outputfilter="no">Geo maps box using Google Maps or Yahoo Maps API for guestbooks</module>
-    <module type="page" guid="5068a7d52a428b6e83f86a83d89e0210" name="Markers data" class="content_gmaps_markers" file="content_gmaps_markers.php" outputfilter="yes">Data of markers for XML-HTTP requests</module>
-    <module type="admin" guid="630cd0c01fd9044826e95e181c5a27d2" name="Geo maps" class="edmodule_gmaps" file="edmodule_gmaps.php" glyph="geomaps.png">Manage markers and export to kml files</module>    
+    <module type="box" guid="2797513c166b5a83bc17b558a0c973b2" name="Geo maps for Google Maps" class="actionbox_geomaps_google" file="actbox_geomaps_google.php">Geo maps box using Google Maps API</module>
+    <module type="box" guid="73714f39bb30261f01fb37bcc7d05753" name="Geo maps for Yahoo Maps" class="actionbox_geomaps_yahoo" file="actbox_geomaps_yahoo.php">Geo maps box using Yahoo Maps API</module>
+    <module type="page" guid="5068a7d52a428b6e83f86a83d89e0210" name="Markers data" class="content_geomaps_markers" file="content_geomaps_markers.php">Data of markers for XML-HTTP requests</module>
+    <module type="admin" guid="630cd0c01fd9044826e95e181c5a27d2" name="Geo maps" class="edmodule_geomaps" file="edmodule_geomaps.php" glyph="geomaps.png">Manage markers and export to kml files</module>
   </modules>
   <tables>
-    <table name="gmaps_markers"/>
-    <table name="gmaps_folders"/>
-    <table name="gmaps_keys"/>
+    <table name="geomaps_markers"/>
+    <table name="geomaps_folders"/>
+    <table name="geomaps_keys"/>
   </tables>
 </modulegroup>
