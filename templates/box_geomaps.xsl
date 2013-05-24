@@ -92,6 +92,7 @@
 
     <xsl:template name="markers-js-content">
       <!-- js content -->
+      initMarkers('<xsl:value-of select="base/@id" />');
       <xsl:if test="markers and markers/data-page/@url != ''">
         <xsl:choose>
           <xsl:when test="contains(markers/data-page/@url, '?')">

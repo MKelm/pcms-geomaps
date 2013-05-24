@@ -24,6 +24,13 @@ GNU General Public Licence (GPL): gpl.txt
 
 *Changelog*
 
+_Rev. 0.25 (2009-06-09)_
+- Fixed custom markers mode without markers page
+- Added optional external custom icons for Google Maps
+- Added option to (de-)activate spatial functions
+- Increased latitude / longitude field size (db)
+- Fixed some notice errors
+
 _Rev. 0.24 (2009-06-01)_
 - Fixed addMarker() in connector class
 - Added deleteMarker() in connector class

@@ -663,8 +663,8 @@ class admin_geomaps extends base_geomaps {
             ($hasCmdParam && $this->params['cmd'] == 'add_key')
           );
 
-        if ($this->params['key_id'] > 0 && $hasCmdParam
-            && $this->params['cmd'] == 'edit_key') {
+        if (isset($this->params['key_id']) && $this->params['key_id'] > 0 &&
+            $hasCmdParam && $this->params['cmd'] == 'edit_key') {
           $menubar->addButton('Delete key',
             $this->getLink(array(
                 'cmd' => 'del_key', 'key_id' => $this->params['key_id'])),

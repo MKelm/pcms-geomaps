@@ -6,8 +6,8 @@
 <field name="marker_title" type="string" size="200" null="no"/>
 <field name="marker_icon" type="string" size="200" null="yes"/>
 <field name="marker_desc" type="string" size="65535" null="yes"/>
-<field name="marker_lat" type="float" size="9,6" null="no"/>
-<field name="marker_lng" type="float" size="9,6" null="no"/>
+<field name="marker_lat" type="float" size="17,14" null="no"/>
+<field name="marker_lng" type="float" size="17,14" null="no"/>
 <field name="marker_sort" type="integer" size="2" null="no"/>
 <field name="marker_addr_street" type="string" size="255" null="yes"/>
 <field name="marker_addr_house" type="string" size="10" null="yes"/>

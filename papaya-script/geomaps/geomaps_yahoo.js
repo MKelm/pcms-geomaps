@@ -89,8 +89,8 @@ function setMarker(point, markerIdx) {
     var marker = new YMarker(point);
 
     // set marker with or without description text
-    if (geoMarkers[uniqueId][markerIdx][1]
-        && geoMarkers[uniqueId][markerIdx][1].length > 0) {
+    if (geoMarkers[uniqueId][markerIdx] && geoMarkers[uniqueId][markerIdx][1] &&
+        geoMarkers[uniqueId][markerIdx][1].length > 0) {
 
       if (markerAction == 'click') {
         YEvent.Capture(marker, EventsList.MouseClick, function() {

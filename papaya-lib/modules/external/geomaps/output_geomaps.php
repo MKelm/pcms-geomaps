@@ -248,32 +248,27 @@ class output_geomaps extends base_geomaps {
                           $showDescription, $mouseDescAction, $zoomIntoFocus,
                           $polylineActive, $polylineColor, $polylineSize) {
 
-    if ($pageId > 0 && !empty($viewMode) && !empty($mouseDescAction)) {
+    $this->data['markers'] = array(
+      'ressource_type' => $ressourceType,
+      'ressource_id' => $ressourceId, // int id
+      'mode' => $mode, // string mode
+      'rotation' => $rotation, // int yes/no
+      'show_description' => $showDescription, // int yes/no
+      'mouse_desc_action' => $mouseDescAction, // string action
+      'zoom_into_focus' => $zoomIntoFocus, // int yes/no
+      'color' => $color, // string color
+      'data_page' => array(
+        'page_id' => $pageId, // int id
+        'view_mode' => $viewMode // string mode
+      ),
+      'polyline' => array(
+        'active' => $polylineActive, // int yes/no
+        'color' => $polylineColor, // string color
+        'size' => $polylineSize // int size
+      )
+    );
 
-      $this->data['markers'] = array(
-        'ressource_type' => $ressourceType,
-        'ressource_id' => $ressourceId, // int id
-        'mode' => $mode, // string mode
-        'rotation' => $rotation, // int yes/no
-        'show_description' => $showDescription, // int yes/no
-        'mouse_desc_action' => $mouseDescAction, // string action
-        'zoom_into_focus' => $zoomIntoFocus, // int yes/no
-        'color' => $color, // string color
-        'data_page' => array(
-          'page_id' => $pageId, // int id
-          'view_mode' => $viewMode // string mode
-        ),
-        'polyline' => array(
-          'active' => $polylineActive, // int yes/no
-          'color' => $polylineColor, // string color
-          'size' => $polylineSize // int size
-        )
-      );
-      return TRUE;
-    }
-
-    $this->data['markers'] = NULL;
-    return FALSE;
+    return TRUE;
   }
 
   /**
@@ -402,21 +397,28 @@ class output_geomaps extends base_geomaps {
       $data = &$this->data['markers'];
 
       // get data page url
-      $dataPageUrl = $this->getWebLink(
-        $this->data['markers']['data_page']['page_id'], NULL,
-        $this->data['markers']['data_page']['view_mode'],
-        array(
-          'ressource_type' => $this->data['markers']['ressource_type'],
-          'ressource_id' => $this->data['markers']['ressource_id'],
-          'base_kml' => 1
-        ), $this->paramName
-      );
+      if (!empty($this->data['markers']['data_page']['page_id']) &&
+          !empty($this->data['markers']['data_page']['view_mode'])) {
+        $dataPageUrl = $this->getWebLink(
+          $this->data['markers']['data_page']['page_id'], NULL,
+          $this->data['markers']['data_page']['view_mode'],
+          array(
+            'ressource_type' => $this->data['markers']['ressource_type'],
+            'ressource_id' => $this->data['markers']['ressource_id'],
+            'base_kml' => 1
+          ), $this->paramName
+        );
+        $dataPageUrlXML = sprintf(
+          '<data-page url="%s" />'.LF,
+          papaya_strings::escapeHTMLChars($dataPageUrl)
+        );
+      }
 
       // set xml
       $xml = sprintf(
         '<markers mode="%s" rotation="%d" color="%s" zoom-into-focus="%d"'.
         ' show-description="%d" mouse-desc-action="%s">'.LF.
-        '<data-page url="%s" />'.LF.
+        $dataPageUrlXML.
         '<polyline active="%d" color="%s" size="%d" />'.LF.
         '</markers>'.LF,
         $this->data['markers']['mode'],
@@ -425,7 +427,6 @@ class output_geomaps extends base_geomaps {
         $this->data['markers']['zoom_into_focus'],
         $this->data['markers']['show_description'],
         $this->data['markers']['mouse_desc_action'],
-        papaya_strings::escapeHTMLChars($dataPageUrl),
         $this->data['markers']['polyline']['active'],
         $this->data['markers']['polyline']['color'],
         $this->data['markers']['polyline']['size']
@@ -537,9 +538,9 @@ class output_geomaps extends base_geomaps {
     $url = '';
 
     // depends on base / settings data
-    if (!empty($this->data['base']) && !empty($this->data['settings'])
-        && $this->data['settings']['center']['lat'] > 0
-        && $this->data['settings']['center']['lng'] > 0) {
+    if (!empty($this->data['base']) && !empty($this->data['settings']) &&
+        $this->data['settings']['center']['lat'] > 0 &&
+        $this->data['settings']['center']['lng'] > 0) {
 
       switch ($this->data['base']['api']['type']) {
       case $this->apiTypeNames[0]: // google
@@ -632,8 +633,8 @@ class output_geomaps extends base_geomaps {
     $url = '';
 
     // depends on base / settings / markers data
-    if (!empty($this->data['base']) && !empty($this->data['settings'])
-        && !empty($this->data['markers'])) {
+    if (!empty($this->data['base']) && !empty($this->data['settings']) &&
+        !empty($this->data['markers'])) {
 
       // get first marker adress by folder
       $firstMarkerData = $this->getFirstMarkerData(
@@ -905,7 +906,7 @@ class output_geomaps extends base_geomaps {
   }
 
   function getDynamicImagesComboBox($name, $element, $data, $paramName) {
-    $result .= sprintf(
+    $result = sprintf(
       '<select name="%s[%s]" class="dialogSelect dialogScale">'.LF,
       $paramName, $name);
 

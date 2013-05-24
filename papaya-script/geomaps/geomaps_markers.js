@@ -14,12 +14,15 @@
 * @package module_geomaps
 */
 
-function addMarkers(url, params) {
+function initMarkers(uniqueid) {
   // store var in global context
   if (typeof window.geoMarkers == "undefined") {
     window.geoMarkers = [];
   }
+  geoMarkers[uniqueId] = new Array();
+}
 
+function addMarkers(url, params) {
   xmlDocument = getMarkersXML(url, params);
   if (xmlDocument) {
     parseMarkersXML(xmlDocument);
@@ -70,7 +73,6 @@ function getMarkersXML(url, params) {
 
 function parseMarkersXML(xmlData) {
   // store var in global context
-  geoMarkers[uniqueId] = new Array();
   var placemarkNodes = xmlData.getElementsByTagName("Placemark");
 
   // tmp vars

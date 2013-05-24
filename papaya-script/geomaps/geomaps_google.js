@@ -137,7 +137,8 @@ function getMarkerPoint(lat, lng) {
   return new GLatLng(parseFloat(lat), parseFloat(lng));
 }
 
-function setMarker(point, markerIdx) {
+function setMarker(point, markerIdx,
+                   externalIcon, externalIconW, externalIconH) {
   if (!point) {
     var point = new GLatLng(parseFloat(geoMarkers[uniqueId][markerIdx][2]),
                             parseFloat(geoMarkers[uniqueId][markerIdx][3]));
@@ -145,27 +146,40 @@ function setMarker(point, markerIdx) {
 
   if (point) {
     // set marker with or without icon image
-    if (geoMarkers[uniqueId][markerIdx][4]
-        && geoMarkers[uniqueId][markerIdx][4].length == 3) {
+    if ((externalIcon && externalIconW && externalIconH) ||
+        (geoMarkers[uniqueId][markerIdx][4] &&
+         geoMarkers[uniqueId][markerIdx][4].length == 3)) {
 
-      var new_icon = new GIcon();
-      new_icon.image = geoMarkers[uniqueId][markerIdx][4][0];
-      // todo get dynamic sizes
-      var iw = geoMarkers[uniqueId][markerIdx][4][1];
-      var ih = geoMarkers[uniqueId][markerIdx][4][2];
+      if (externalIcon && externalIconW && externalIconH) {
+        var new_icon = new GIcon();
+        new_icon.image = externalIcon;
+        var iw = externalIconW;
+        var ih = externalIconH;
+
+      } else {
+        var new_icon = new GIcon();
+        new_icon.image = geoMarkers[uniqueId][markerIdx][4][0];
+        var iw = geoMarkers[uniqueId][markerIdx][4][1];
+        var ih = geoMarkers[uniqueId][markerIdx][4][2];
+      }
 
       new_icon.size = new GSize(iw, ih);
       new_icon.iconAnchor = new GPoint(iw/2,ih);
       new_icon.infoWindowAnchor = new GPoint(iw/2,ih/2);
 
-      var marker = new GMarker(point, { icon:new_icon, zIndexProcess:markerZIndexProcessEvent });
+      var marker = new GMarker(
+        point, { icon:new_icon, zIndexProcess:markerZIndexProcessEvent }
+      );
+
     } else {
-      var marker = new GMarker(point, { zIndexProcess:markerZIndexProcessEvent });
+      var marker = new GMarker(
+        point, { zIndexProcess:markerZIndexProcessEvent }
+      );
     }
 
     // set description text
-    if (geoMarkers[uniqueId][markerIdx][1]
-        && geoMarkers[uniqueId][markerIdx][1].length > 0) {
+    if (geoMarkers[uniqueId][markerIdx][1] &&
+        geoMarkers[uniqueId][markerIdx][1].length > 0) {
 
       GEvent.addListener(marker, markerAction, function () {
         markerListenerEvent(markerIdx);

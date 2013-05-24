@@ -54,15 +54,16 @@ class image_geomaps_icon extends base_dynamicimage {
   * @return image $result resource image
   */
   function &generateImage(&$controller) {
+    $result = NULL;
 
     if (empty($this->data['anchor_image_id']) || empty($this->data['anchor_alignment'])
         || !($anchorImage = &$controller->getMediaFileImage($this->data['anchor_image_id']))) {
-      return FALSE;
+      return $result;
     }
 
     if (empty($this->attributes['image_guid'])
         || !($iconImage = &$controller->getMediaFileImage($this->attributes['image_guid']))) {
-      return FALSE;
+      return $result;
     }
 
     // get max image size and new image positions
