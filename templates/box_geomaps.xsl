@@ -8,19 +8,28 @@
 
 <xsl:output method="xml" encoding="utf-8" standalone="no" indent="no" omit-xml-declaration="yes" />
 
-  <xsl:template match="geomap">
+  <xsl:template match="geo-map">
     <!-- main template -->
     <xsl:choose>
       <xsl:when test="static and static/@force = 1">
-        <!-- use static content only -->
-        <xsl:call-template name="static-content" />
+        <!-- force static content only -->
+        <div id="map_{base/@id}" class="geoMap">
+          <xsl:call-template name="static-content" />
+        </div>
       </xsl:when>
       <xsl:otherwise>
-        <!-- use default content -->
-        <xsl:call-template name="html-containers" />
+        <!-- coordinates mode container -->
+        <xsl:if test ="base/@coor-mode = 1">
+          <div id="coor_{base/@id}" class="geoMapCoor"><xsl:text> </xsl:text></div>
+        </xsl:if>
+        <!-- map html container -->
+        <div id="map_{base/@id}" class="geoMap" style="width: {settings/@width}px; height: {settings/@height}px;">
+          <xsl:call-template name="noscript-content" /><xsl:text> </xsl:text>
+        </div>
+        <!-- js files -->
         <xsl:call-template name="include-js-files" />
+        <!-- js content -->
         <xsl:call-template name="map-js-content" />
-        <xsl:call-template name="noscript-content" />
       </xsl:otherwise>
     </xsl:choose>
 
@@ -28,33 +37,24 @@
 
   </xsl:template>
 
-  <xsl:template name="html-containers">
-    <!-- coordinates html container -->
-    <xsl:if test ="options/@coor-mode = 1">
-      <div id="coor_{options/@id}"><xsl:text> </xsl:text></div>
-    </xsl:if>
-    <!-- map html container -->
-    <div id="map_{options/@id}" style="width: {size/@width}px; height: {size/@height}px;"><xsl:text> </xsl:text></div>
-  </xsl:template>
-
   <xsl:template name="include-js-files">
     <!-- map js files -->
     <xsl:choose>
-      <xsl:when test="@type = 0">
+      <xsl:when test="base/api/@type = 'google'">
         <!-- google maps -->
-        <script type="text/javascript" src="http://maps.google.com/maps?file=api&amp;v=2&amp;key={@api-key}"><xsl:comment><xsl:text> </xsl:text></xsl:comment></script>
-        <script type="text/javascript" src="{options/@scripts-path}geomaps_google.js"><xsl:comment><xsl:text> </xsl:text></xsl:comment></script>
+        <script type="text/javascript" src="http://maps.google.com/maps?file=api&amp;v=2&amp;key={base/api/@key}"><xsl:comment><xsl:text> </xsl:text></xsl:comment></script>
+        <script type="text/javascript" src="{base/@scripts-path}geomaps_google.js"><xsl:comment><xsl:text> </xsl:text></xsl:comment></script>
       </xsl:when>
       <xsl:otherwise>
         <!-- yahoo maps -->
-        <script type="text/javascript" src="http://api.maps.yahoo.com/ajaxymap?v=3.4&amp;appid={@api-key}"><xsl:comment><xsl:text> </xsl:text></xsl:comment></script>
-        <script type="text/javascript" src="{options/@scripts-path}geomaps_yahoo.js"><xsl:comment><xsl:text> </xsl:text></xsl:comment></script>
+        <script type="text/javascript" src="http://api.maps.yahoo.com/ajaxymap?v=3.4&amp;appid={base/api/@key}"><xsl:comment><xsl:text> </xsl:text></xsl:comment></script>
+        <script type="text/javascript" src="{base/@scripts-path}geomaps_yahoo.js"><xsl:comment><xsl:text> </xsl:text></xsl:comment></script>
       </xsl:otherwise>
     </xsl:choose>
 
     <!-- script to handle map markers -->
     <xsl:if test="markers and markers/@mode != 'hidden'">
-      <script type="text/javascript" src="{options/@scripts-path}geomaps_markers.js"><xsl:comment><xsl:text> </xsl:text></xsl:comment></script>
+      <script type="text/javascript" src="{base/@scripts-path}geomaps_markers.js"><xsl:comment><xsl:text> </xsl:text></xsl:comment></script>
     </xsl:if>
 
   </xsl:template>
@@ -62,15 +62,15 @@
   <xsl:template name="map-js-content">
     <!-- map java script content -->
     <xsl:choose>
-      <xsl:when test="@type = 0">
+      <xsl:when test="base/api/@type = 'google'">
         <!-- google maps -->
         <script type="text/javascript"><xsl:comment>
-          initGoogleMaps(<xsl:value-of select="options/@coor-mode" />,
-            <xsl:value-of select="controls/@basic" />, <xsl:value-of select="controls/@scale" />,
-            <xsl:value-of select="controls/@type" />, <xsl:value-of select="controls/@overview" />,
-            <xsl:value-of select="center/@lat" />, <xsl:value-of select="center/@lng" />, <xsl:value-of select="center/@zoom" />,
-            <xsl:value-of select="options/@map-type" />, '<xsl:value-of select="options/@id" />',
-            <xsl:value-of select="size/@width" />, <xsl:value-of select="size/@height" />
+          initGoogleMaps(<xsl:value-of select="base/@coor-mode" />,
+            <xsl:value-of select="settings/controls/@basic" />, <xsl:value-of select="settings/controls/@scale" />,
+            <xsl:value-of select="settings/controls/@type" />, <xsl:value-of select="settings/controls/@overview" />,
+            <xsl:value-of select="settings/center/@lat" />, <xsl:value-of select="settings/center/@lng" />, <xsl:value-of select="settings/@zoom" />,
+            <xsl:value-of select="settings/@type" />, '<xsl:value-of select="base/@id" />',
+            <xsl:value-of select="settings/@width" />, <xsl:value-of select="settings/@height" />
           );
           <xsl:call-template name="markers-js-content" />
         </xsl:comment></script>
@@ -78,10 +78,10 @@
       <xsl:otherwise>
         <!-- yahoo maps -->
         <script type="text/javascript"><xsl:comment>
-          initYahooMaps(<xsl:value-of select="options/@coor-mode" />,
-            <xsl:value-of select="controls/@zoom" />, <xsl:value-of select="controls/@pan" />, <xsl:value-of select="controls/@type" />,
-            <xsl:value-of select="center/@lat" />, <xsl:value-of select="center/@lng" />, <xsl:value-of select="center/@zoom" />,
-            <xsl:value-of select="options/@map-type" />, '<xsl:value-of select="options/@id" />'
+          initYahooMaps(<xsl:value-of select="base/@coor-mode" />,
+            <xsl:value-of select="settings/controls/@zoom" />, <xsl:value-of select="settings/controls/@pan" />, <xsl:value-of select="settings/controls/@type" />,
+            <xsl:value-of select="settings/center/@lat" />, <xsl:value-of select="settings/center/@lng" />, <xsl:value-of select="settings/@zoom" />,
+            <xsl:value-of select="settings/@type" />, '<xsl:value-of select="base/@id" />'
           );
           <xsl:call-template name="markers-js-content" />
         </xsl:comment></script>
@@ -91,18 +91,17 @@
 
   <xsl:template name="markers-js-content">
     <!-- js content -->
-    <xsl:if test="markers and markers/@url != ''">
+    <xsl:if test="markers and markers/data-page/@url != ''">
       <xsl:choose>
-        <xsl:when test="contains(markers/@url, '?')">
-          <xsl:variable name="url" select="substring-before(markers/@url, '?')" />
-          <xsl:variable name="params" select="substring-after(markers/@url, '?')" />
+        <xsl:when test="contains(markers/data-page/@url, '?')">
+          <xsl:variable name="url" select="substring-before(markers/data-page/@url, '?')" />
+          <xsl:variable name="params" select="substring-after(markers/data-page/@url, '?')" />
           <!-- markers ajax request -->
           addMarkers('<xsl:value-of select="$url" />', '<xsl:value-of select="$params" />');
         </xsl:when>
         <xsl:otherwise>
-          <xsl:variable name="url" select="markers/@url" />
           <!-- markers ajax request -->
-          addMarkers('<xsl:value-of select="$url" />', '');
+          addMarkers('<xsl:value-of select="markers/data-page/@url" />', '');
         </xsl:otherwise>
       </xsl:choose>
       <!-- get polyline -->
@@ -111,9 +110,9 @@
       </xsl:if>
       <!-- get / show markers -->
       <xsl:if test="markers/@mode != 'hide'">
-        getMarkers('<xsl:value-of select="markers/@action" />', '<xsl:value-of select="markers/@mode" />',
-                    <xsl:value-of select="markers/@rotation" />, <xsl:value-of select="markers/@description" />,
-                    <xsl:value-of select="markers/@zoom-focus" />, '<xsl:value-of select="markers/@color" />');
+        getMarkers('<xsl:value-of select="markers/@mouse-desc-action" />', '<xsl:value-of select="markers/@mode" />',
+                    <xsl:value-of select="markers/@rotation" />, <xsl:value-of select="markers/@show-description" />,
+                    <xsl:value-of select="markers/@zoom-into-focus" />, '<xsl:value-of select="markers/@color" />');
       </xsl:if>
     </xsl:if>
   </xsl:template>
@@ -138,34 +137,38 @@
   <xsl:template name="static-content">
     <!-- static content -->
     <xsl:choose>
-      <xsl:when test="static/link/@url != ''">
+      <xsl:when test="static/permalink/@url != ''">
         <!-- static image with permalink to static version -->
-        <a href="{static/link/@url}" target="{static/link/@target}">
-          <img src="{static/image/@url}" alt="{static/image/@text}" width="{static/image/@width}" height="{static/image/@height}" />
+        <a href="{static/permalink/@url}" target="{base/@links-target}">
+          <img src="{static/@image}" alt="{static/@alternative-text}" width="{settings/@width}" height="{settings/@height}" />
         </a>
       </xsl:when>
-      <xsl:when test="center/@permalink != ''">
+      <xsl:when test="permalink/@url != ''">
         <!-- static image with permalink to dynamic version -->
-        <a href="{center/@permalink}" target="{static/link/@target}">
-          <img src="{static/image/@url}" alt="{static/image/@text}" width="{static/image/@width}" height="{static/image/@height}" />
+        <a href="{permalink/@url}" target="{base/@links-target}">
+          <img src="{static/@image}" alt="{static/@alternative-text}" width="{settings/@width}" height="{settings/@height}" />
         </a>
       </xsl:when>
       <xsl:otherwise>
         <!-- static image only -->
-        <img src="{static/image/@url}" alt="{static/image/@text}" width="{static/image/@width}" height="{static/image/@height}" />
+        <img src="{static/@image}" alt="{static/@alternative-text}" width="{settings/@width}" height="{settings/@height}" />
       </xsl:otherwise>
     </xsl:choose>
   </xsl:template>
 
   <xsl:template name="trip-planner-link">
     <xsl:choose>
-      <xsl:when test="static and static/@force = 1 and static/trip-planner/text()">
+      <xsl:when test="static and static/@force = 1 and static/trip-planner/@caption != ''">
         <!-- forced static content -->
-        <div id="map_tp_{options/@id}"><a href="{static/trip-planner/@href}"><xsl:value-of select="static/trip-planner/text()" /></a></div>
+        <div id="map_tp_{base/@id}" class="geoMapTripPlanner">
+          <a href="{static/trip-planner/@url}" target="{base/@links-target}"><xsl:value-of select="static/trip-planner/@caption" /></a>
+        </div>
       </xsl:when>
-      <xsl:when test="trip-planner/text()">
+      <xsl:when test="trip-planner/@caption != ''">
         <!-- default content -->
-        <div id="map_tp_{options/@id}"><a href="{trip-planner/@href}"><xsl:value-of select="trip-planner/text()" /></a></div>
+        <div id="map_tp_{base/@id}" class="geoMapTripPlanner">
+          <a href="{trip-planner/@url}" target="{base/@links-target}"><xsl:value-of select="trip-planner/@caption" /></a>
+        </div>
       </xsl:when>
     </xsl:choose>
   </xsl:template>

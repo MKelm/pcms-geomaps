@@ -54,6 +54,10 @@ class admin_geomaps extends base_geomaps {
     parent::__construct();
   }
 
+  function admin_geomaps() {
+    $this->admin_geomaps();
+  }
+
   function initialize(&$module, &$images, &$msgs, &$layout, &$authUser) {
 
     // set system enviroment
@@ -151,12 +155,12 @@ class admin_geomaps extends base_geomaps {
         break;
       case 'set_up_marker':
         if ($this->module->hasPerm(2, FALSE)) {
-          $this->execSetUpMarker(1);
+          $this->execSetMarker(-1);
         }
         break;
       case 'set_down_marker':
         if ($this->module->hasPerm(2, FALSE)) {
-          $this->execSetDownMarker(-1);
+          $this->execSetMarker(1);
         }
         break;
       case 'sort_markers_asc':
@@ -408,16 +412,16 @@ class admin_geomaps extends base_geomaps {
       $sort = $this->checkMarkersSort($this->params['folder_id'],
         $this->params['marker_id']);
 
-      $d = ($direction == 'UP') ? 1 : -1;
-
-      if ($sort !== FALSE && $sort > $d) {
-        $this->switchMarkerPosition($this->params['marker_id'], $sort, $d);
+      if ($sort !== FALSE
+          && (($direction > 0 && $sort < count($this->markers))
+              || ($direction < 0 && $sort > 0))) {
+        $this->switchMarkerPosition($this->params['marker_id'], $sort, $direction);
         $this->loadMarkers($this->params['folder_id']);
 
         $this->addMsg(MSG_INFO, sprintf($this->_gt('Marker "%s" (%s) set %s.'),
           $this->markers[$this->params['marker_id']]['marker_title'],
           $this->params['marker_id'],
-          ($direction == 'UP') ? 'up' : 'down'));
+          ($direction == 1) ? 'up' : 'down'));
       }
     }
   }
@@ -919,6 +923,7 @@ class admin_geomaps extends base_geomaps {
       'marker_desc' => array(
         'Description', 'isSomeText', TRUE, 'simplerichtext', 6
       ),
+      'Coordinates',
       'marker_lat' => array(
         'Latitude', '/[\+\-]?\d+(\.\d+)?/', TRUE, 'input', 20, '',
         0
@@ -926,6 +931,22 @@ class admin_geomaps extends base_geomaps {
       'marker_lng' => array(
         'Longitude', '/[\+\-]?\d+(\.\d+)?/', TRUE, 'input', 20, '',
         0
+      ),
+      'Address',
+      'marker_addr_street' => array(
+        'Street', 'isNoHTML', FALSE, 'input', 255
+      ),
+      'marker_addr_house' => array(
+        'House number', 'isAlphaNumChar', FALSE, 'input', 10
+      ),
+      'marker_addr_zip' => array(
+        'ZIP code', 'isAlphaNumChar', FALSE, 'input', 5
+      ),
+      'marker_addr_city' => array(
+        'City', 'isNoHTML', FALSE, 'input', 255
+      ),
+      'marker_addr_country' => array(
+        'Country', 'isNoHTML', FALSE, 'input', 255
       )
     );
     return $fields;
@@ -973,7 +994,11 @@ class admin_geomaps extends base_geomaps {
       $data = array(
         'marker_title' => $marker['marker_title'],
         'marker_desc' => $marker['marker_desc'],
-        'marker_address' => $marker['marker_address'],
+        'marker_addr_street' => $marker['marker_addr_street'],
+        'marker_addr_house' => $marker['marker_addr_house'],
+        'marker_addr_zip' => $marker['marker_addr_zip'],
+        'marker_addr_city' => $marker['marker_addr_city'],
+        'marker_addr_country' => $marker['marker_addr_country'],
         'marker_lat' => $marker['marker_lat'],
         'marker_lng' => $marker['marker_lng']
       );
@@ -1053,36 +1078,15 @@ class admin_geomaps extends base_geomaps {
     if ($apiScript) {
       $this->layout->addScript($apiScript);
 
-      $getCoordinatesField = sprintf(
-        '<line caption="%s" fid="marker_address" hint="%s">'.LF.
-        '<input type="text" name="gmps[marker_address]" value=""'.
-          ' id="%s"'.
-          ' maxlength="200" class="dialogInput dialogScale"'.
-          ' fid="marker_address" />'.LF.
-        '</line>'.LF,
-        papaya_strings::escapeHTMLChars($this->_gt('Address')),
-        papaya_strings::escapeHTMLChars(
-          $this->_gt('This field is functional and is not going to be saved.')),
-        $dialogObj->dialogId.'_marker_address'
-      );
-
       $getCoordinatesButton = sprintf('<dlgbutton value="%s" type="button"'.
-        ' hint="%s" onclick="getCoordinates(\'%s\', \'%s\', %d);" />'.LF,
+        ' onclick="getCoordinates( %d, \'%s\');" />'.LF,
         papaya_strings::escapeHTMLChars($this->_gt('Get coordinates by address')),
-        papaya_strings::escapeHTMLChars($this->_gt('Click this button to get coordinates by address.')),
-        $dialogObj->dialogId, 'marker_address', $apiType
+        $apiType, $dialogObj->dialogId
       );
-
-      // insert the field and the button by replacing selected strings
-      // in the given xml data with additional xml data
-      // TODO: Try to figure out, if papaya CMS has better ways to
-      //       implement custom java script functionalities in future.
-      $dialogXML = str_replace('</lines>',
-        $getCoordinatesField.'</lines>',
+      /* insert the field and the button by replacing selected strings
+         in the given xml data with additional xml data */
+      $dialogXML = str_replace('</dialog>', $getCoordinatesButton.'</dialog>',
         $dialogObj->getDialogXML());
-      $dialogXML = str_replace('<dlgbutton value="Save" />',
-        $getCoordinatesButton.'<dlgbutton value="Save" />',
-        $dialogXML);
 
       $result = $dialogXML;
     }
@@ -1098,33 +1102,21 @@ class admin_geomaps extends base_geomaps {
    * @return mixed boolean FALSE if an error occurs or the script xml data
    */
   function getApiScript($type) {
-    $apiKey = FALSE;
-    $sql = "SELECT key_value
-              FROM %s
-             WHERE key_host LIKE '%s'
-               AND key_type = %d";
-    $params = array($this->tableKeys, $_SERVER['HTTP_HOST'],
-      $type);
+    $apiKey = $this->getDistinctKey($_SERVER['HTTP_HOST'], $type, TRUE);
 
-    if ($res = $this->databaseQueryFmt($sql, $params)) {
-      if ($row = $res->fetchRow(DB_FETCHMODE_ASSOC)) {
-        $apiKey = $row['key_value'];
-      }
-    }
-
-    if ($apiKey !== FALSE && ($type == 0 || $type == 1))  {
+    if (!empty($apiKey) && !empty($apiKey['key_value']))  {
       $result = '';
 
       switch($type) {
       case 0:
         $result .= sprintf('<script type="text/javascript" '.
           'src="http://maps.google.com/maps?file=api&amp;v=2&amp;key=%s" />'.LF,
-          papaya_strings::escapeHTMLChars($apiKey));
+          papaya_strings::escapeHTMLChars($apiKey['key_value']));
         break;
       case 1:
         $result .= sprintf('<script type="text/javascript" '.
           'src="http://api.maps.yahoo.com/ajaxymap?v=3.0&amp;appid=%s" />'.LF,
-          papaya_strings::escapeHTMLChars($apiKey));
+          papaya_strings::escapeHTMLChars($apiKey['key_value']));
         break;
       }
 
@@ -1162,7 +1154,7 @@ class admin_geomaps extends base_geomaps {
 
     $selected = '';
     if (!(isset($this->params['folder_id']) && $this->params['folder_id'] > 0)
-        || !(isset($this->params['cmd']) && $this->params['cmd'] == 'add_folder')) {
+        || (isset($this->params['cmd']) && $this->params['cmd'] == 'add_folder')) {
       $selected = ' selected="selected"';
     }
     $result .= sprintf('<listitem image="%s" title="%s" href="%s"%s/>'.LF,
@@ -1467,7 +1459,11 @@ class admin_geomaps extends base_geomaps {
           'marker_folder'  => $params['marker_folder'],
           'marker_title' => $params['marker_title'],
           'marker_desc' => $this->addMarkerDialog->data['marker_desc'],
-          'marker_address' => $params['marker_address'],
+          'marker_addr_street' => $params['marker_addr_street'],
+          'marker_addr_house' => $params['marker_addr_house'],
+          'marker_addr_zip' => $marker['marker_addr_zip'],
+          'marker_addr_city' => $params['marker_addr_city'],
+          'marker_addr_country' => $params['marker_addr_country'],
           'marker_lat' => $params['marker_lat'],
           'marker_lng' => $params['marker_lng']
         )
@@ -1485,7 +1481,11 @@ class admin_geomaps extends base_geomaps {
         'marker_folder'  => $params['marker_folder'],
         'marker_title' => $params['marker_title'],
         'marker_desc' => $this->editMarkerDialog->data['marker_desc'],
-        'marker_address' => $params['marker_address'],
+        'marker_addr_street' => $params['marker_addr_street'],
+        'marker_addr_house' => $params['marker_addr_house'],
+        'marker_addr_zip' => $params['marker_addr_zip'],
+        'marker_addr_city' => $params['marker_addr_city'],
+        'marker_addr_country' => $params['marker_addr_country'],
         'marker_lat' => $params['marker_lat'],
         'marker_lng' => $params['marker_lng']
       );
@@ -1508,13 +1508,6 @@ class admin_geomaps extends base_geomaps {
 
       $fileName = sprintf('geo_maps_export_%d.kml', time());
 
-      // Set folder title
-      $defaultFolderTitle = $this->getOption(
-        'default_folder_title', 'No folder title'
-      );
-      $folderTitle = (!empty($folderTitle))
-        ? $folderTitle : $this->_gt($defaultFolderTitle);
-
       // Set kml header information
       header('Pragma: public');
       header('Expires: 0');
@@ -1530,48 +1523,8 @@ class admin_geomaps extends base_geomaps {
         header('Content-Disposition: attachment; filename="'.$fileName.'"');
       }
 
-      $result = sprintf('<?xml version="1.0" encoding="UTF-8"?>'.LF.
-                        '<kml xmlns="http://earth.google.com/kml/2.2">'.LF.
-                        '<name>%s</name>'.LF.
-                        '<Style id="sh_ylw-pushpin">'.LF.
-                        '<IconStyle>'.LF.
-                        '<scale>1.3</scale>'.LF.
-                        '<Icon>'.LF.
-                        '<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>'.LF.
-                        '</Icon>'.LF.
-                        '<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>'.LF.
-                        '</IconStyle>'.LF.
-                        '</Style>'.LF.
-                        '<Style id="sn_ylw-pushpin">'.LF.
-                        '<IconStyle>'.LF.
-                        '<scale>1.1</scale>'.LF.
-                        '<Icon>'.LF.
-                        '<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>'.LF.
-                        '</Icon>'.LF.
-                        '<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>'.LF.
-                        '</IconStyle>'.LF.
-                        '</Style>'.LF.
-                        '<StyleMap id="msn_ylw-pushpin">'.LF.
-                        '<Pair>'.LF.
-                        '<key>normal</key>'.LF.
-                        '<styleUrl>#sn_ylw-pushpin</styleUrl>'.LF.
-                        '</Pair>'.LF.
-                        '<Pair>'.LF.
-                        '<key>highlight</key>'.LF.
-                        '<styleUrl>#sh_ylw-pushpin</styleUrl>'.LF.
-                        '</Pair>'.LF.
-                        '</StyleMap>'.LF.
-                        '<Document>'.LF.
-                        '<Folder>'.LF.
-                        '<name>%s</name>'.LF.
-                        '%s'.LF.
-                        '</Folder>'.LF.
-                        '</Document>'.LF.
-                        '</kml>'.LF,
-        $fileName,
-        $folderTitle,
-        $this->getMarkersKML($markers, NULL, '#msn_ylw-pushpin', TRUE)
-      );
+      $result = '<?xml version="1.0" encoding="UTF-8"?>'.LF;
+      $result .= $this->getMarkersKML($markers, $folderTitle, $fileName);
 
       echo $result;
       exit;

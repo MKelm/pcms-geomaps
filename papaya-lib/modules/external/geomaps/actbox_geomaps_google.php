@@ -27,7 +27,7 @@ require_once(PAPAYA_INCLUDE_PATH.'system/base_actionbox.php');
  *
  * @package module_geomaps
  * @author Martin Kelm <martinkelm@idxsolutions.de>
- * @author Bastian Feder <info@papaya-cms.com> <rev. 0.18 extensions>
+ * @author Bastian Feder <info@papaya-cms.com> <extensions>
  */
 class actionbox_geomaps_google extends base_actionbox {
 
@@ -36,102 +36,143 @@ class actionbox_geomaps_google extends base_actionbox {
    * @public array $editFields
    */
   var $editFields = array(
-    'coor_mode' => array('Coordinates Mode', 'isNum', TRUE, 'yesno',
+    'base_coor_mode' => array('Coordinates Mode', 'isNum', TRUE, 'yesno',
        NULL, 'Shows latitude and longitude information on click.', 0),
-    'map_type' => array('Map Type', 'isAlphaNum', TRUE, 'combo',
+    'base_links_target' => array('Links Target', 'isAlphaNumChar', TRUE, 'combo',
+      array('_self' => 'Default', '_blank' => 'New window'), NULL, '_self'),
+    'base_no_script_text' => array('No Script Text', 'isSomeText', FALSE,
+      'textarea', 2, NULL, 'Please activate JavaScript!'),
+
+    'Settings',
+    'stg_type' => array('Type', 'isAlphaNum', TRUE, 'combo',
       array(
-        'G_NORMAL_MAP'      => 'Normal',
-        'G_SATELLITE_MAP'   => 'Satellite',
-        'G_HYBRID_MAP'      => 'Hybrid',
-        'G_PHYSICAL_MAP'    => 'Physical',
+        'G_NORMAL_MAP' => 'Normal',
+        'G_SATELLITE_MAP' => 'Satellite',
+        'G_HYBRID_MAP' => 'Hybrid',
+        'G_PHYSICAL_MAP' => 'Physical',
         'G_MOON_VISIBLE_MAP' => 'Moon',
         'G_MOON_ELEVATION_MAP' => 'Moon (elevation)',
         'G_MARS_VISIBLE_MAP' => 'Mars',
         'G_MARS_ELEVATION_MAP' => 'Mars (elevation)',
         'G_SKY_VISIBLE_MAP' => 'Sky'
-      ), NULL, 'G_NORMAL_MAP'),
-    'map_width' => array('Width', 'isNum', TRUE, 'input', 50, NULL, 640),
-    'map_height' => array('Heigth', 'isNum', TRUE, 'input', 50, NULL, 480),
-    'noscript_text' => array('No Script', 'isSomeText', FALSE, 'textarea', 2,
-      NULL, 'Please activate JavaScript!'),
-    'trip_planner' => array('Trip planner', 'isNoHTML', FALSE, 'input',
-      200, 'Uses first marker to start at.', 'Trip planner'),
+      ), NULL, 'G_NORMAL_MAP'
+    ),
+    'stg_width' => array('Width', 'isNum', TRUE, 'input', 50, NULL, 320),
+    'stg_height' => array('Heigth', 'isNum', TRUE, 'input', 50, NULL, 240),
+    'stg_zoom' => array('Zoom', 'isNum', TRUE, 'input', 2,
+      'Use a value from 1 to 18.', 9),
+
+    'Controls',
+    'stg_ctrl_basic' => array('Navigation And Zoom', 'isNum', TRUE, 'combo',
+       array(
+         0 => 'Navigation control and zoom bar',
+         1 => 'Navigation control and zoom buttons',
+         2 => 'Zoom buttons'
+       ), NULL, 0
+     ),
+    'stg_ctrl_type' => array('Map Type', 'isAlpha', TRUE, 'combo',
+      array('true' => 'Yes', 'false' => 'No'),
+      'Set a default map type in settings.', 'true'),
+    'stg_ctrl_overview' => array('Overview map', 'isAlpha', TRUE, 'combo',
+      array('true' => 'Yes', 'false' => 'No'), NULL, 'true'),
+    'stg_ctrl_scale' => array('Scale information', 'isAlpha', TRUE, 'combo',
+      array('true' => 'Yes', 'false' => 'No'), NULL, 'true'),
+
+    'Center',
+    'stg_center_mode' => array('Mode', 'isAlpha', TRUE, 'combo',
+      array(
+        'default' => 'Use settings',
+        'first_marker' => 'Use first marker',
+        'all_markers' => 'Use markers\' center'
+      ), 'Use markers\' center: Check zoom level or activate zoom into focus!',
+      'default'
+    ),
+    'stg_center_lat' => array('Latitude', '/[\+\-]?\d+(\.\d+)?/', TRUE, 'input',
+      50, NULL, 0),
+    'stg_center_lng' => array('Longitude', '/[\+\-]?\d+(\.\d+)?/', TRUE, 'input',
+      50, NULL, 0),
+
+    'Markers KML',
+    'mrk_page_id' => array('Page Id', 'isNum', FALSE, 'pageid',
+      10, 'Select a page which uses the markers data module.', 0),
+    'mrk_view_mode' => array('View Mode', 'isAlpha', TRUE, 'function',
+      'callbackViewModesList', 'Select a KML view mode.'),
+    'mrk_folder_id' => array('Folder', 'isNum', TRUE, 'function',
+      'callbackFoldersList'),
+
+    'Markers',
+    'mrk_active' => array('Active', 'isNum', TRUE, 'yesno',
+      NULL, 'Needs a valid KML data, see above.', 0),
+    'mrk_zoom_into_focus' => array('Zoom Into Focus', 'isNum', TRUE, 'yesno',
+      NULL, NULL, 0),
+    'mrk_show_description' => array('Show Description', 'isNum', TRUE, 'yesno',
+      NULL, NULL, 0),
+    'mrk_mouse_desc_action' => array('Description Action', 'isAlpha',
+      TRUE, 'combo', array(
+        'click' => 'Open by click',
+        'mouseover' => 'Open by mouse over'
+      ),
+      'How do you wanna to open descriptions?', 'click'
+    ),
+    'mrk_mode' => array('Mode', 'isAlpha', TRUE, 'combo',
+      array(
+        'hide' => 'Hide',
+        'static' => 'Default',
+        'rotation' => 'Rotation'
+      ), 'Note: The rotation mode opens descriptions automatically.', 'hide'
+    ),
+    'mrk_rotation' => array('Rotation Interval', 'isNum', TRUE, 'input',
+      5, 'In seconds, for rotation mode', 5000),
+
+    'Polyline',
+    'mrk_polyline_active' => array('Active', 'isNum', TRUE, 'yesno',
+       NULL, 'Needs at least two markers!', 0),
+    'mrk_polyline_color' => array('Color', 'isNoHTML', TRUE, 'function',
+      'callbackPolylineColors'),
+    'mrk_polyline_size' => array('Size', 'isNum', TRUE, 'input', 2, NULL, 5),
+
+    'Trip Planner',
+    'stg_trippl_active' => array('Active', 'isNum', TRUE, 'yesno',
+      NULL, 'Needs one marker as start point.', 0),
+    'stg_trippl_caption' => array('Caption', 'isNoHTML', FALSE, 'input',
+      200, NULL, 'Trip planner'),
 
     'Static map',
-    'static_map' => array('Active', 'isNum', TRUE, 'yesno',
-      NULL, NULL, 0),
-    'static_map_force' => array('Force', 'isNum', TRUE, 'yesno',
-      NULL, NULL, 0),
-    'static_map_type' => array('Map Type', 'isAlpha', TRUE, 'combo',
+    'stc_active' => array('Active', 'isNum', TRUE, 'yesno', NULL, NULL, 0),
+    'stc_force' => array('Force', 'isNum', TRUE, 'yesno',
+      NULL, 'Show static map image only.', 0),
+    'stc_type' => array('Type', 'isAlpha', TRUE, 'combo',
       array(
         'roadmap' => 'Roadmap',
         'mobile' => 'Mobile',
         'satellite' => 'Satellite',
         'terrain' => 'Terrain',
         'hybrid' => 'Hybrid'
-      ),  NULL, 'roadmap'),
-    'static_link_target' => array('Link Target', 'isAlphaNumChar', TRUE, 'combo',
-      array('_self' => 'Default', '_blank' => 'New window'), NULL, '_self'),
-    'static_img_alt_text' => array('Image Text', 'isSomeText', FALSE, 'input',
-      200, NULL, 'Static Google Map'),
-
-    'Controls',
-    'ctrl_basic' => array('Navigation And Zoom', 'isNum', TRUE, 'combo',
-       array(
-         0 => 'Navigation control and zoom bar',
-         1 => 'Navigation control and zoom buttons',
-         2 => 'Zoom buttons'
-       ), NULL, 0),
-    'ctrl_type' => array('Map Type', 'isAlpha', TRUE, 'combo',
-      array('true' => 'Yes', 'false' => 'No'),
-      'Set default map type above', 'true'),
-    'ctrl_overview' => array('Overview map', 'isAlpha', TRUE, 'combo',
-      array('true' => 'Yes', 'false' => 'No'), NULL, 'true'),
-    'ctrl_scale' => array('Scale information', 'isAlpha', TRUE, 'combo',
-      array('true' => 'Yes', 'false' => 'No'), NULL, 'true'),
-
-    'Markers',
-    'marker_description' => array('Show Description', 'isNum', TRUE, 'yesno',
-      NULL, NULL, 1),
-    'marker_zoom_focus' => array('Zoom Into Focus', 'isNum', TRUE, 'yesno',
-      NULL, NULL, 0),
-    'marker_pageid' => array('Page Id', 'isNum', FALSE, 'pageid',
-      10, 'Optional, leave blank to show map without markers.', 0),
-    'marker_viewmode' => array('View Mode', 'isAlpha', TRUE, 'function',
-      'callbackViewModesList'),
-    'marker_folder' => array('Folder', 'isNum', TRUE, 'function',
-      'callbackFoldersList'),
-    'marker_mode' => array('Mode', 'isAlpha', TRUE, 'combo',
-      array('hide' => 'Hide', 'static' => 'Static', 'rotation' => 'Rotation'),
-      'Note: Rotation mode opens description popups automatically', 'hide'),
-    'marker_action' => array('Mouse Action', 'isAlpha', TRUE, 'combo',
-      array('click' => 'Click', 'mouseover' => 'Mouse over'), NULL, 'click'),
-    'marker_rotation' => array('Rotation Interval', 'isNum', TRUE, 'input',
-      5, 'In seconds, for rotation mode', 5000),
-    'marker_color' =>  array('Marker color', 'isAlpha', TRUE, 'combo',
-      array('rotate' => 'rotate' ,
-            'black' => 'black', 'brown' => 'brown', 'green' => 'green',
-            'purple' => 'purple', 'yellow' => 'yellow', 'blue' => 'blue',
-            'gray' => 'gray', 'orange' => 'orange', 'red' => 'red',
-            'white' => 'white'), 'For static maps only.', 'red'),
-
-    'Markers Polyline',
-    'marker_polyline' => array('Active', 'isNum', TRUE, 'yesno',
-       NULL, 'Needs at least two markers!', 0),
-    'marker_polyline_color' => array('Color', 'isNoHTML', TRUE, 'function',
-      'callbackPolylineColors'),
-    'marker_polyline_size' => array('Size', 'isNum', TRUE, 'input', 2, NULL, 5),
-
-    'Center',
-    'center_first_marker' => array('Use First Marker', 'isNum', TRUE, 'yesno',
-      NULL, NULL, 0),
-    'center_lat' => array('Latitude', '/[\+\-]?\d+(\.\d+)?/', TRUE, 'input',
-      50, NULL, 0),
-    'center_lng' => array('Longitude', '/[\+\-]?\d+(\.\d+)?/', TRUE, 'input',
-      50, NULL, 0),
-    'center_zoom' => array('Zoom Level', 'isNum', TRUE, 'input',
-      2, 'Use a value from 1 to 20.', 10),
-
+      ), NULL, 'roadmap'
+    ),
+    'stc_markers_color' => array('Markers Color', 'isAlpha', TRUE, 'combo',
+      array(
+        'rotate' => 'rotate' ,
+        'black' => 'black', 'brown' => 'brown', 'green' => 'green',
+        'purple' => 'purple', 'yellow' => 'yellow', 'blue' => 'blue',
+        'gray' => 'gray', 'orange' => 'orange', 'red' => 'red',
+        'white' => 'white'
+       ), NULL, 'red'
+    ),
+    'stc_markers_size' => array('Markers Size', 'isAlpha', TRUE, 'combo',
+      array(
+        'default' => 'default',
+        'mid' => 'mid',
+        'small' => 'small',
+        'tiny' => 'tiny'
+      ), 'Select "mid" to activate custom decoration.', 'default'
+    ),
+    'stc_markers_decoration' => array('Markers Decoration', 'isNoHTML',
+      FALSE, 'input', 1,
+      'Set the decoration of the marker (only lowercase allowed).'
+    ),
+    'stc_alternative_text' => array('Alternative Text', 'isSomeText', FALSE,
+      'input', 200, NULL, '')
   );
 
   /**
@@ -211,16 +252,89 @@ class actionbox_geomaps_google extends base_actionbox {
    * @return string xml
    */
   function getParsedData() {
-    $result = '';
+    $xml = '';
 
     if ($this->initOutputObject() === TRUE) {
       $this->setDefaultData();
 
-      $result = $this->outputObj->getGeoMapXML($this->data, 0,
-        array('folder_id' => $this->data['marker_folder']));
+      // set base data
+      $baseData = $this->outputObj->setBaseData(
+        0, // google api
+        $this->data['base_coor_mode'],
+        $this->data['base_no_script_text'],
+        $this->data['base_links_target']
+      );
+
+      // set settings data
+      $optionsData = $this->outputObj->setSettingsData(
+        $this->data['stg_type'],
+        $this->data['stg_width'],
+        $this->data['stg_height'],
+        array(
+          'basic' => $this->data['stg_ctrl_basic'],
+          'type' => $this->data['stg_ctrl_type'],
+          'overview' => $this->data['stg_ctrl_overview'],
+          'scale' => $this->data['stg_ctrl_scale']
+        ),
+        $this->data['stg_trippl_active'],
+        $this->data['stg_trippl_caption'],
+        $this->data['stg_zoom'],
+        $this->data['stg_center_lat'],
+        $this->data['stg_center_lng'],
+        $this->data['stg_center_mode'],
+        $this->data['mrk_folder_id']
+      );
+
+      // set markers data
+      if ($this->data['mrk_active'] == 1) {
+        $markersData = $this->outputObj->setMarkersData(
+          $this->data['mrk_page_id'],
+          $this->data['mrk_view_mode'],
+          $this->data['mrk_folder_id'],
+          'red', // TODO dynamic markers color
+          $this->data['mrk_mode'],
+          $this->data['mrk_rotation'],
+          $this->data['mrk_show_description'],
+          $this->data['mrk_mouse_desc_action'],
+          $this->data['mrk_zoom_into_focus'],
+          $this->data['mrk_polyline_active'],
+          $this->data['mrk_polyline_color'],
+          $this->data['mrk_polyline_size']
+        );
+      } else {
+        $markersData = TRUE;
+      }
+
+      // set static data
+      if ($this->data['stc_active'] == 1) {
+        $staticData = $this->outputObj->setStaticData(
+          $this->data['stc_force'],
+          $this->data['stc_type'],
+          $this->data['stc_alternative_text'],
+          $this->data['stc_markers_color'],
+          $this->data['stc_markers_size'],
+          $this->data['stc_markers_decoration']
+        );
+      } else {
+        $staticData = TRUE;
+      }
+
+      if ($baseData && $optionsData && $markersData && $staticData) {
+        // get xmls
+        $xml = $this->outputObj->getBaseXml();
+        $xml .= $this->outputObj->getSettingsXml();
+        if ($this->data['mrk_active'] == 1) {
+          $xml .= $this->outputObj->getMarkersXml();
+        }
+        $xml .= $this->outputObj->getPermaLinkXml();
+        $xml .= $this->outputObj->getTripPlannerLinkXml();
+        if ($this->data['stc_active'] == 1) {
+          $xml .= $this->outputObj->getStaticXml();
+        }
+      }
     }
 
-    return $result;
+    return sprintf('<geo-map>%s</geo-map>'.LF, $xml);
   }
 
 }

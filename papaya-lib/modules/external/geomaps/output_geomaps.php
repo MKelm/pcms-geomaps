@@ -14,7 +14,7 @@
  *
  * @package module_geomaps
  * @author Martin Kelm <martinkelm@idxsolutions.de>
- * @author Bastian Feder <info@papaya-cms.com> <rev. 0.18 extensions>
+ * @author Bastian Feder <info@papaya-cms.com> <extensions>
  */
 
 /**
@@ -39,71 +39,48 @@ class output_geomaps extends base_geomaps {
   var $paramName = 'gmps';
 
   /**
-   * Keeps the current loaded api key.
+   * Contains base settings, options, marker and static map settings.
    *
-   * @var string $apiKey
+   * @var arra $data
    */
-  var $apiKey = NULL;
+  var $data = NULL;
 
   /**
-   * A point to start at.
-   *
-   * @var array $centerPoint contains position and zoom data
+   * Main constructor
    */
-  var $centerPoint = array(
-    'latitude'  => NULL,
-    'longitude' => NULL,
-    'zoom'      => NULL,
-    'is_marker' => NULL
-  );
+  function __construct() {
+    parent::__construct();
 
-  /**
-   * Get the location of the java script files
-   *
-   * @return string path
-   */
-  function getScriptsPath() {
-    return $this->getOption('scripts_path', '/');
+    // intialize data
+    $this->data = array(
+      'base' => NULL, // api settings and general stuff
+      'settings'  => NULL, // map settings
+      'markers' => NULL, // markers settings
+      'static' => NULL // static map settings
+    );
   }
 
   /**
-   * load the registered API key
-   *
-   * @param integer $mapsType type of the map to be embedded
+   * PHP4 constructor
    */
-  function loadApiKey($mapsType) {
-    if (!is_null($this->apiKey)) {
-      return TRUE;
-    }
-    $key = $this->getDistinctKey($_SERVER['HTTP_HOST'], $mapsType, TRUE);
-    if (!is_null($key)) {
-      $this->apiKey = $key;
-      return TRUE;
-    }
-    return FALSE;
+  function output_geomaps() {
+    $this->__construct();
   }
 
-  function getFolderId($folderParam) {
-    // get folder by first array value
-    if (!is_null($folderParam)) {
-      $folderId = array_values($folderParam);
-      if (isset($folderId[0])) {
-        return $folderId[0];
-      }
-    }
-    return NULL;
-  }
-
-  function getFirstMarkerData($folderParam) {
-
-    $folderId = $this->getFolderId($folderParam);
+  /**
+   * Get first marker data.
+   *
+   * @param integer $folderId markers folder to load from
+   * @return array|NULL Marker data or nothing.
+   */
+  function getFirstMarkerData($folderId) {
     // get first marker by folder to set center point data
     if (!is_null($folderId) && $this->loadMarkers($folderId, 1, 0)) {
       if (is_array($this->markers) && $this->markersCount > 0) {
-        $markers = array_values($this->markers);
-        if (isset($markers[0]) && is_array($markers[0])
-            && count($markers[0]) > 0) {
-          return $markers[0];
+        $marker = array_shift($this->markers);
+        $this->markers = NULL;
+        if (is_array($marker) && count($marker) > 0) {
+          return $marker;
         }
       }
     }
@@ -111,247 +88,471 @@ class output_geomaps extends base_geomaps {
   }
 
   /**
-   * Set a point to start at.
+   * Sets api data and general stuff.
    *
-   * @param reference $data content module data
-   * @param array $folderParam Folder parameter name with value
-   * @return boolean $result status
+   * @param integer $apiType Select a valid api type id.
+   * @param integer $coorMode Activate coordinates mode or not.
+   * @param string $noScriptText Default text to show if no script is avail.
+   * @param string $linksTarget Set target links in output.
+   * @return boolean Status
    */
-  function setCenterPoint(&$data, $folderParam = NULL) {
-    $result = FALSE;
+  function setBaseData($apiType, $coorMode, $noScriptText, $linksTarget) {
 
-    if (isset($data['center_first_marker']) && $data['center_first_marker'] == 1) {
-      $firstMarker = $this->getFirstMarkerData($folderParam);
-      if (!is_null($firstMarker)) {
-        $this->centerPoint['latitude']  = $firstMarker['marker_lat'];
-        $this->centerPoint['longitude'] = $firstMarker['marker_lng'];
-        $this->centerPoint['is_marker'] = TRUE;
-        $result = TRUE;
+    $apiKey = $this->getDistinctKey($_SERVER['HTTP_HOST'], $apiType, TRUE);
+    if ($apiKey['key_value'] !== FALSE
+        && isset($this->apiTypeNames[$apiType])) {
+
+      $this->data['base'] = array(
+        'id' => md5($this->paramName.microtime()), // string id
+        'api' => array(
+          'key' => $apiKey['key_value'], // string key
+          'type' => $this->apiTypeNames[$apiType], // string type name
+        ),
+        'coor_mode' => $coorMode, // int yes/no
+        'scripts_path' => $this->getOption('scripts_path', '/'), // string
+        'no_script_text' => $noScriptText, // string text
+        'links_target' => $linksTarget // string
+      );
+      return TRUE;
+
+    } else {
+      // Set no API key error message.
+      if (isset($this->apiTypeTitles[$apiType])) {
+        $msg = sprintf('No API key has been set for %s.',
+          $this->apiTypeTitles[$apiType]);
+      } else {
+        $msg = 'No API key has been set.';
       }
+      $this->logMsg(PAPAYA_LOGTYPE_MODULES, MSG_ERROR, $msg);
     }
 
-    if ($result === FALSE) {
-      // or use default data
-      $this->centerPoint['latitude']  = (isset($data['center_lat'])) ? $data['center_lat'] : 0;
-      $this->centerPoint['longitude'] = (isset($data['center_lng'])) ? $data['center_lng'] : 0;
-      $this->centerPoint['is_marker'] = FALSE;
-      $result = TRUE;
-    }
-    $this->centerPoint['zoom'] = (isset($data['center_zoom'])) ? $data['center_zoom'] : 6;
-
-    return $result;
+    $this->data['base'] = NULL;
+    return FALSE;
   }
 
-  function getGeoMapXML(&$data, $type, $folderParam = NULL) {
-    $xml = '';
+  /**
+   * Sets map settings like map type, width, height, active control elements ...
+   *
+   * @param string $type Map type depends on api type.
+   * @param integer $width
+   * @param integer $height
+   * @param array $controls Control elements depend on api type.
+   * @param integer $tripPlannerActive
+   * @param integer $tripPlannerCaption
+   * @param float $centerLat Latitude to center map.
+   * @param float $centerLng Longitude to center map.
+   * @param int $zoom Zoom range depends on api type.
+   * @param int $centerByMarker
+   * @param int $markersFolderId (optional)
+   * @return boolean Status
+   */
+  function setSettingsData($type, $width, $height, $controls,
+                           $tripPlannerActive, $tripPlannerCaption,
+                           $zoom, $centerLat, $centerLng,
+                           $centerMode = NULL, $markersFolderId = NULL) {
 
-    if ($this->loadApiKey($type) && is_array($data) && count($data) > 0) {
+    // depends on base data
+    if (!empty($this->data['base']) && !empty($type)
+        && $width > 0 && $height > 0
+        && is_array($controls) && count($controls) > 0) {
 
-      $width = (isset($data['map_width'])) ? $data['map_width'] : NULL;
-      $height = (isset($data['map_height'])) ? $data['map_height'] : NULL;
+      // get another center mode if possible
+      $centerPoint = NULL;
+      switch ($centerMode) {
+      case 'first_marker':
+        // get the location of the first marker if available to center map
+        $centerPoint = $this->getFirstMarkerData($markersFolderId);
+        break;
+      case 'all_markers':
+        // get center position of all markers
+        $centerPoint = $this->getMarkersCenterPoint($markersFolderId);
+        break;
+      default:
+        // use default parameters
+      }
+      // overwrite center position
+      if (!is_null($centerPoint)
+          && isset($centerPoint['marker_lat'])
+          && $centerPoint['marker_lat'] > -90
+          && $centerPoint['marker_lat'] < 90
+          && isset($centerPoint['marker_lng'])
+          && $centerPoint['marker_lng'] > -180
+          && $centerPoint['marker_lng'] < 180) {
 
-      $id           = md5($this->paramName.microtime());
-      $scriptsPath  = $this->getScriptsPath();
-      $coorMode     = (isset($data['coor_mode'])) ? $data['coor_mode'] : NULL;
-      $mapType      = (isset($data['map_type'])) ? $data['map_type'] : NULL;
-      $noScriptText = (isset($data['noscript_text'])) ? $data['noscript_text'] : NULL;
-
-      $ctrlBasic    = (isset($data['ctrl_basic'])) ? $data['ctrl_basic'] : NULL;
-      $ctrlScale    = (isset($data['ctrl_scale'])) ? $data['ctrl_scale'] : NULL;
-      $ctrlPan      = (isset($data['ctrl_pan'])) ? $data['ctrl_pan'] : NULL;
-      $ctrlZoom     = (isset($data['ctrl_zoom'])) ? $data['ctrl_zoom'] : NULL;
-      $ctrlType     = (isset($data['ctrl_type'])) ? $data['ctrl_type'] : NULL;
-      $ctrlOverview = (isset($data['ctrl_overview'])) ? $data['ctrl_overview'] : NULL;
-
-      $this->setCenterPoint($data, $folderParam);
-
-      // geo map xml header / defaults
-      $xml = sprintf('<geomap type="%d" api-key="%s">'.LF.
-                     '<size width="%d" height="%d" />'.LF.
-                     '<options id="%s" coor-mode="%d" map-type="%s" scripts-path="%s" />'.LF.
-                     '<controls basic="%s" scale="%s" pan="%s" zoom="%d" type="%s" overview="%s" />'.LF.
-                     '<center lat="%f" lng="%f" zoom="%d" permalink="%s" />'.LF.
-                     '<no-script-text>%s</no-script-text>'.LF,
-        $type, $this->apiKey['key_value'],
-        $width, $height,
-        $id, $coorMode, $mapType, papaya_strings::escapeHTMLChars($scriptsPath),
-        $ctrlBasic, $ctrlScale, $ctrlPan, $ctrlZoom, $ctrlType, $ctrlOverview,
-        $this->centerPoint['latitude'], $this->centerPoint['longitude'], $this->centerPoint['zoom'],
-        papaya_strings::escapeHTMLChars($this->getPermaLinkUrl($data, $type)),
-        papaya_strings::escapeHTMLChars($noScriptText)
-      );
-
-      $xml .= $this->getTripPlannerLinkXML($data, $type, $folderParam, FALSE);
-
-      // geo maps static image (optional)
-      if (isset($data['static_map']) && $data['static_map'] == 1) {
-        $xml .= $this->getStaticMapXML($data, $type, $folderParam);
+        $centerLat = $centerPoint['marker_lat'];
+        $centerLng = $centerPoint['marker_lng'];
       }
 
-      $xml .= $this->getGeoMapMarkersXML($data, $folderParam);
+      // fix zoom value
+      $zoom = ($zoom > 0) ? $zoom : 1;
+      switch ($this->data['base']['api']['type']) {
+      case $this->apiTypeNames[0]: // google
+        $zoom = ($zoom < 19) ? $zoom : 18;
+        break;
+      case $this->apiTypeNames[1]: // yahoo
+        $zoom = ($zoom < 18) ? $zoom : 17;
+        break;
+      }
 
-      // geo map xml footer
-      $xml .= '</geomap>'.LF;
-
+      $this->data['settings'] = array(
+        'type' => $type, // string map type
+        'width' => $width, // int width
+        'height' => $height, // int height
+        'controls' => $controls, // array contents by api type
+        'trip_planner' => array(
+          'active' => $tripPlannerActive, // int yes/no
+          'caption' => $tripPlannerCaption, // string
+        ),
+        'zoom' => $zoom, // int
+        'center' => array(
+          'lat' => $centerLat, // float latitude
+          'lng' => $centerLng, // float longitude
+          'mode' => $centerMode // string
+        )
+      );
+      return TRUE;
     }
-    return $xml;
+
+    $this->data['settings'] = NULL;
+    return FALSE;
   }
 
+  /**
+   * Set markers data like data page, mode, click action, polyline ...
+   *
+   * @param integer $pageId Page which contains markers data.
+   * @param string $viewMode View mode to get markers data.
+   * @param integer $folderId Folder to get markers from.
+   * @param string $mode Mode to show markers.
+   * @param int $rotation Rotate markers.
+   * @param int $showDescription Show description.
+   * @param string $descMouseAction Mouse action to open description.
+   * @param int $zoomFocus Zoom markers into focus.
+   * @param string $color
+   * @param return Status
+   */
+  function setMarkersData($pageId, $viewMode, $folderId, $color, $mode, $rotation,
+                          $showDescription, $mouseDescAction, $zoomIntoFocus,
+                          $polylineActive, $polylineColor, $polylineSize) {
 
-  function getGeoMapMarkersXML(&$data, $folderParam) {
+    if ($pageId > 0 && !empty($viewMode) && !empty($mouseDescAction)) {
+
+      $this->data['markers'] = array(
+        'folder_id' => $folderId, // int id
+        'mode' => $mode, // string mode
+        'rotation' => $rotation, // int yes/no
+        'show_description' => $showDescription, // int yes/no
+        'mouse_desc_action' => $mouseDescAction, // string action
+        'zoom_into_focus' => $zoomIntoFocus, // int yes/no
+        'color' => $color, // string color
+        'data_page' => array(
+          'page_id' => $pageId, // int id
+          'view_mode' => $viewMode // string mode
+        ),
+        'polyline' => array(
+          'active' => $polylineActive, // int yes/no
+          'color' => $polylineColor, // string color
+          'size' => $polylineSize // int size
+        )
+      );
+      return TRUE;
+    }
+
+    $this->data['markers'] = NULL;
+    return FALSE;
+  }
+
+  /**
+   * Set data for static map images.
+   *
+   * @param int $force Force static map image output.
+   * @param string $type Depends on api type.
+   * @param string $alternativeText Alt. text for static map images.
+   * @return Status
+   */
+  function setStaticData($force, $type, $alternativeText,
+                         $markersColor, $markersSize, $markersDecoration) {
+
+    if (!empty($type)) {
+
+      $this->data['static'] = array(
+        'force' => $force, // int yes/no
+        'type' => $type, // string static map type
+        'alternative_text' => $alternativeText, // string image alternative text
+        'markers' => array(
+          'color' => $markersColor, // string
+          'size' => $markersSize, // string
+          'decoration' => $markersDecoration // string
+        )
+      );
+      return TRUE;
+    }
+
+    $this->data['static'] = NULL;
+    return FALSE;
+  }
+
+  /**
+   * Get base xml with api data and general stuff.
+   *
+   * @return string $xml
+   */
+  function getBaseXml() {
     $xml = '';
 
-    // data url
-    $pageId = (isset($data['marker_pageid'])) ? $data['marker_pageid'] : NULL;
-    $viewMode = (isset($data['marker_viewmode'])) ? $data['marker_viewmode'] : NULL;
+    // depends on base data
+    if (is_array($this->data['base']) && count($this->data['base']) > 0) {
 
-    // polyline mode
-    $polyline = (isset($data['marker_polyline'])) ? $data['marker_polyline'] : NULL;
-    $polylineColor = (isset($data['marker_polyline_color'])) ? $data['marker_polyline_color'] : NULL;
-    $polylineSize = (isset($data['marker_polyline_size'])) ? $data['marker_polyline_size'] : NULL;
-
-    // settings / options
-    $mode = (isset($data['marker_mode'])) ? $data['marker_mode'] : NULL;
-    $action = (isset($data['marker_action'])) ? $data['marker_action'] : NULL;
-    $rotation = (isset($data['marker_rotation'])) ? $data['marker_rotation'] : 0;
-    $description = (isset($data['marker_description'])) ? $data['marker_description'] : 0;
-    $zoomFocus = (isset($data['marker_zoom_focus'])) ? $data['marker_zoom_focus'] : 0;
-    $markerColor = (isset($data['marker_color'])) ? $data['marker_color'] : 0;
-    // geo map markers data
-    if ($pageId > 0 && is_array($folderParam) && count($folderParam) == 1) {
-      // get data url
-      $dataUrl = $this->getWebLink($pageId, NULL, $viewMode,
-        $folderParam, $this->paramName);
-      // set xml
-      $xml = sprintf('<markers url="%s" mode="%s" action="%s" rotation="%d" description="%d" zoom-focus="%d" color="%s">'.LF.
-                     '<polyline active="%d" color="%s" size="%d" />'.LF.
-                     '</markers>'.LF,
-        papaya_strings::escapeHTMLChars($dataUrl), $mode, $action, $rotation,
-        $description, $zoomFocus, $markerColor,
-        $polyline, $polylineColor, $polylineSize
+      $xml .= sprintf(
+        '<base id="%s" coor-mode="%d" scripts-path="%s" links-target="%s">'.LF.
+        '<api key="%s" type="%s" />'.LF.
+        '<no-script-text>%s</no-script-text>'.LF.
+        '</base>'.LF,
+        $this->data['base']['id'],
+        $this->data['base']['coor_mode'],
+        papaya_strings::escapeHTMLChars($this->data['base']['scripts_path']),
+        $this->data['base']['links_target'],
+        papaya_strings::escapeHTMLChars($this->data['base']['api']['key']),
+        $this->data['base']['api']['type'],
+        papaya_strings::escapeHTMLChars($this->data['base']['no_script_text'])
       );
     }
+
     return $xml;
   }
 
   /**
-   * generates an URL linking to a static map
+   * Get settings xml with data like map type, width, height, controls ...
    *
-   * @param array_reference $data
-   * @return string
+   * @return string $xml
    */
-  function getStaticMapXML(&$data, $type, $folderParam) {
+  function getSettingsXml() {
+    $xml = '';
 
-    $force = (isset($data['static_map_force'])) ? $data['static_map_force'] : 0;
+    // depends on base and settings data
+    if (!empty($this->data['base']) && !empty($this->data['settings'])) {
 
-    // get image url and alternative text
-    $imageUrl     = $this->getStaticMapImageUrl($data, $type, $folderParam);
-    $imageAltText = (isset($data['static_img_alt_text'])) ? $data['static_img_alt_text'] : NULL;
-    $imageWidth = (isset($data['map_width'])) ? $data['map_width'] : NULL;
-    $imageHeight = (isset($data['map_height'])) ? $data['map_height'] : NULL;
+      // get controls xml related to api type
+      switch ($this->data['base']['api']['type']) {
+      case $this->apiTypeNames[0]: // google
+        $controlsXml = sprintf(
+          '<controls basic="%d" type="%s" overview="%s" scale="%s" />'.LF,
+          $this->data['settings']['controls']['basic'],
+          $this->data['settings']['controls']['type'],
+          $this->data['settings']['controls']['overview'],
+          $this->data['settings']['controls']['scale']
+        );
+        break;
+      case $this->apiTypeNames[1]: // yahoo
+        $controlsXml = sprintf(
+          '<controls type="%s" pan="%s" zoom="%s" />'.LF,
+          $this->data['settings']['controls']['type'],
+          $this->data['settings']['controls']['pan'],
+          $this->data['settings']['controls']['zoom']
+        );
+        break;
+      }
 
-    $linkUrl    = $this->getPermaLinkUrl($data, $type, TRUE);
-    $linkTarget = (isset($data['static_link_target'])) ? $data['static_link_target'] : NULL;
+      if (isset($controlsXml)) {
+        $xml .= sprintf(
+          '<settings type="%s" width="%d" height="%d" zoom="%d">'.LF.
+          '%s'.LF.
+          '<center lat="%f" lng="%f" mode="%s" />'.LF.
+          '</settings>'.LF,
+          $this->data['settings']['type'],
+          $this->data['settings']['width'],
+          $this->data['settings']['height'],
+          $this->data['settings']['zoom'],
+          $controlsXml,
+          $this->data['settings']['center']['lat'],
+          $this->data['settings']['center']['lng'],
+          $this->data['settings']['center']['mode']
+        );
+      }
+    }
 
-    // return xml
-    $xml = sprintf('<static force="%d">'.LF.
-                   '<image url="%s" text="%s" width="%d" height="%d" />'.LF.
-                   '<link url="%s" target="%s" />'.LF,
-      (int)$force,
-      papaya_strings::escapeHTMLChars($imageUrl),
-      papaya_strings::escapeHTMLChars($imageAltText),
-      $imageWidth, $imageHeight,
-      papaya_strings::escapeHTMLChars($linkUrl),
-      papaya_strings::escapeHTMLChars($linkTarget)
-    );
-
-    $xml .= $this->getTripPlannerLinkXML($data, $type, $folderParam, TRUE);
-
-    $xml .= '</static>'.LF;
     return $xml;
   }
 
-  function getStaticMapImageUrl(&$data, $type, $folderParam) {
-    switch ($type) {
-    case 0: // google
+  /**
+   * Get markers xml with data like data page, mode, click action, polyline ...
+   *
+   * @return string $xml
+   */
+  function getMarkersXml() {
+    $xml = '';
 
-      if ($this->loadApiKey($type)) {
+    // depends on base / settings and markers data
+    if (!empty($this->data['base']) && !empty($this->data['settings'])
+        && !empty($this->data['markers'])) {
+      $data = &$this->data['markers'];
 
-        $staticMapWidth = (isset($data['map_width'])) ? $data['map_width'] : NULL;
-        $staticMapHeight = (isset($data['map_height'])) ? $data['map_height'] : NULL;
-        $staticMapType = (isset($data['static_map_type'])) ? $data['static_map_type'] : NULL;
+      // get data page url
+      $dataPageUrl = $this->getWebLink(
+        $this->data['markers']['data_page']['page_id'], NULL,
+        $this->data['markers']['data_page']['view_mode'],
+        array(
+          'folder_id' => $this->data['markers']['folder_id'],
+          'base_kml' => 1
+        ), $this->paramName
+      );
 
-        /*
-         * http://maps.google.com/staticmap?center=40.714728,-73.998672&
-         * zoom=14&size=512x512&maptype=mobile&
-         * markers=40.702147,-74.015794,blues%7C40.711614,-74.012318,greeng%7C40.718217,-73.998284,redc&
-         * key=MAPS_API_KEY
-         */
-        return sprintf('http://maps.google.com/staticmap?key=%s&center=%f,%f&zoom=%d&'.
-                       'size=%s&maptype=%s&%s',
-         $this->apiKey['key_value'],
-         $this->centerPoint['latitude'], $this->centerPoint['longitude'], $this->centerPoint['zoom'],
-         $staticMapWidth.'x'.$staticMapHeight, $staticMapType,
-         $this->getMarkersUriString($data, $folderParam));
-      }
-      break;
-    case 1: // yahoo
+      // set xml
+      $xml = sprintf(
+        '<markers mode="%s" rotation="%d" color="%s" zoom-into-focus="%d"'.
+        ' show-description="%d" mouse-desc-action="%s">'.LF.
+        '<data-page url="%s" />'.LF.
+        '<polyline active="%d" color="%s" size="%d" />'.LF.
+        '</markers>'.LF,
+        $this->data['markers']['mode'],
+        $this->data['markers']['rotation'],
+        $this->data['markers']['color'],
+        $this->data['markers']['zoom_into_focus'],
+        $this->data['markers']['show_description'],
+        $this->data['markers']['mouse_desc_action'],
+        papaya_strings::escapeHTMLChars($dataPageUrl),
+        $this->data['markers']['polyline']['active'],
+        $this->data['markers']['polyline']['color'],
+        $this->data['markers']['polyline']['size']
+      );
+    }
 
-      if ($this->loadApiKey($type)) {
-        $centerZoom = ($this->centerPoint['zoom'] < 13) ? $this->centerPoint['zoom'] : 12;
+    return $xml;
+  }
 
-        $staticMapWidth = (isset($data['map_width'])) ? $data['map_width'] : NULL;
-        $staticMapHeight = (isset($data['map_height'])) ? $data['map_height'] : NULL;
-        $staticMapType = (isset($data['static_map_type'])) ? $data['static_map_type'] : NULL;
+  /**
+   * Get static xml with data for static map images.
+   *
+   * @return string $xml
+   */
+  function getStaticXml() {
+    $xml = '';
 
-        $request = sprintf('http://api.local.yahoo.com/MapsService/V1/mapImage'.
-                           '?appid=%s&latitude=%f&longitude=%f&zoom=%d'.
-                           '&image_width=%d&image_height=%d&image_type=%s&output=php',
-          $this->apiKey['key_value'],
-          $this->centerPoint['latitude'], $this->centerPoint['longitude'], $centerZoom,
-          $staticMapWidth, $staticMapHeight, $staticMapType
+    // depends on base / settings and static data
+    if (!empty($this->data['base']) && !empty($this->data['settings'])
+        && !empty($this->data['static'])) {
+
+      $imageUrl = $this->getStaticImageUrl();
+
+      // return xml
+      $xml = sprintf(
+        '<static force="%d" image="%s" alternative-text="%s">'.LF.
+        '%s%s'.
+        '</static>'.LF,
+        $this->data['static']['force'],
+        papaya_strings::escapeHTMLChars($imageUrl),
+        papaya_strings::escapeHTMLChars(
+          $this->data['static']['alternative_text']
+        ),
+        $this->getPermaLinkXml(TRUE),
+        $this->getTripPlannerLinkXml(TRUE)
+      );
+    }
+
+    return $xml;
+  }
+
+  /**
+   * Gets an url to the static map image.
+   *
+   * @return string url or nothing
+   */
+  function getStaticImageUrl() {
+    $url = '';
+
+    // depends on base / settings and static data
+    if (!empty($this->data['base']) && !empty($this->data['settings'])
+        && !empty($this->data['static'])) {
+
+      switch ($this->data['base']['api']['type']) {
+      case $this->apiTypeNames[0]: // google
+
+        $url = sprintf(
+          'http://maps.google.com/staticmap?key=%s&center=%f,%f&'.
+          'zoom=%d&size=%s&maptype=%s&%s',
+          $this->data['base']['api']['key'],
+          $this->data['settings']['center']['lat'],
+          $this->data['settings']['center']['lng'],
+          $this->data['settings']['zoom'],
+          $this->data['settings']['width'].'x'.$this->data['settings']['height'],
+          $this->data['static']['type'],
+          $this->getMarkersUriString()
+        );
+
+        break;
+      case $this->apiTypeNames[1]: // yahoo
+
+        $zoom = ($this->data['settings']['zoom'] < 13)
+          ? $this->data['settings']['zoom'] : 12; // fix static zoom level
+
+        $request = sprintf(
+          'http://api.local.yahoo.com/MapsService/V1/mapImage'.
+          '?appid=%s&latitude=%f&longitude=%f&zoom=%d'.
+          '&image_width=%d&image_height=%d&image_type=%s&output=php',
+          $this->data['base']['api']['key'],
+          $this->data['settings']['center']['lat'],
+          $this->data['settings']['center']['lng'],
+          $zoom,
+          $this->data['settings']['width'],
+          $this->data['settings']['height'],
+          $this->data['static']['type']
         );
 
         $response = file_get_contents($request);
         if ($response !== false) {
           $phpObj = unserialize($response);
-          return $phpObj['Result'];
+          $url = $phpObj['Result'];
         }
+
+        break;
+      default:
       }
-      break;
-    default:
     }
 
-    return '';
+    return $url;
   }
 
   /**
    * Gets a permalink link url.
    *
-   * @param reference $data content module data
-   * @param integer $type map api type
    * @param boolean $static Use a static context
    * @return string|NULL link url or nothing
    */
-  function getPermaLinkUrl(&$data, $type, $static = FALSE) {
-    switch ($type) {
-    case 0: // google
+  function getPermaLinkUrl($static = FALSE) {
+    $url = '';
 
-      $output     = ($static === TRUE) ? 'html' : '';
+    // depends on base / settings data
+    if (!empty($this->data['base']) && !empty($this->data['settings'])
+        && $this->data['settings']['center']['lat'] > 0
+        && $this->data['settings']['center']['lng'] > 0) {
 
-      // get image link url and link target
-      $linkTpl = 'http://maps.google.com/maps?f=q&source=s_q&output=%s&q=%f,%f&z=%d';
-      return sprintf($linkTpl, $output,
-        $this->centerPoint['latitude'], $this->centerPoint['longitude'], $this->centerPoint['zoom']);
-      break;
-    case 1: // yahoo
+      switch ($this->data['base']['api']['type']) {
+      case $this->apiTypeNames[0]: // google
 
-      if ($static === FALSE) {  // no html version available!
-        $centerZoom = ($this->centerPoint['zoom'] < 13) ? $this->centerPoint['zoom'] : 12;
+        $output = ($static === TRUE) ? 'html' : '';
 
-        $mapType = 'm';
-        if (isset($data['map_type'])) {
-          switch ($data['map_type']) {
+        if ($static == TRUE) {
+          $zoom = floor($this->data['settings']['zoom'] / 2) -9;
+          if ($zoom < 0) {
+            $zoom = $zoom * -1;
+          }
+        } else {
+          $zoom = $this->data['settings']['zoom'];
+        }
+
+        // get image link url and link target
+        $linkTpl = 'http://maps.google.com/maps?f=q&source=s_q&'.
+          'output=%s&q=%f,%f&zoom=%d';
+        $url = sprintf($linkTpl, $output,
+          $this->data['settings']['center']['lat'],
+          $this->data['settings']['center']['lng'],
+          $zoom);
+
+        break;
+      case $this->apiTypeNames[1]: // yahoo
+
+        if ($static === FALSE) {  // no html version available!
+          switch ($this->data['settings']['type']) {
           case 'YAHOO_MAP_SAT':
             $mapType = 's';
             break;
@@ -363,121 +564,243 @@ class output_geomaps extends base_geomaps {
             $mapType = 'm';
             break;
           }
+
+          // get image link url and link target
+          $linkTpl = 'http://maps.yahoo.com/maps?#mvt=%s&'.
+            'lat=%f&lon=%f&zoom=%d';
+          $url = sprintf($linkTpl, $mapType,
+            $this->data['settings']['center']['lat'],
+            $this->data['settings']['center']['lng'],
+            $this->data['settings']['zoom']);
         }
 
-        // get image link url and link target
-        $linkTpl = 'http://maps.yahoo.com/maps?#mvt=%s&lat=%f&lon=%f&zoom=%d';
-        return sprintf($linkTpl, $mapType,
-          $this->centerPoint['latitude'], $this->centerPoint['longitude'], $centerZoom);
+        break;
+      default:
       }
-      break;
-    default:
     }
 
-    return '';
+    return $url;
+  }
+
+  /**
+   * Gets a permalink link xml.
+   *
+   * @param boolean $static Use a static context
+   * @return string link xml or nothing
+   */
+  function getPermaLinkXml($static = FALSE)  {
+    $xml = '';
+
+    // depends on base and settings data
+    if (!empty($this->data['base']) && !empty($this->data['settings'])) {
+
+      $linkUrl = $this->getPermaLinkUrl($static);
+      if (!empty($linkUrl)) {
+        $xml = sprintf(
+          '<permalink url="%s" static="%d" />'.LF,
+          papaya_strings::escapeHTMLChars($linkUrl),
+          $static
+        );
+      }
+    }
+
+    return $xml;
   }
 
   /**
    * Gets a trip planner link url by extending the perma link url.
    *
-   * @param reference $data content module data
-   * @param integer $type map api type
-   * @param array $folderParam markers folder parameter with value
    * @param boolean $static Use a static context
-   * @return string|NULL link url or nothing
+   * @return string link url or nothing
    */
-  function getTripPlannerLinkUrl(&$data, $type, $folderParam, $static = FALSE) {
+  function getTripPlannerLinkUrl($static = FALSE) {
+    $url = '';
 
-    // get first marker adress by folder
-    $firstMarker = $this->getFirstMarkerData($folderParam);
-    if (!is_null($firstMarker)) {
-      $address = papaya_strings::escapeHTMLChars($firstMarker['marker_address']);
-    }
+    // depends on base / settings / markers data
+    if (!empty($this->data['base']) && !empty($this->data['settings'])
+        && !empty($this->data['markers'])) {
 
-    // get trip planner link by adding destination address to permalink
-    if (!empty($address)) {
-      $permaLink = $this->getPermaLinkUrl($data, $type, $static);
-      if (!empty($permaLink)) {
-        switch ($type) {
-        case 0: // google
-          return $permaLink.sprintf('&daddr=%s', $address);
-          break;
-        case 1: // yahoo
-          return $permaLink.sprintf('&q2=%s', $address);
-          break;
+      // get first marker adress by folder
+      $firstMarkerData = $this->getFirstMarkerData(
+        $this->data['markers']['folder_id']
+      );
+      if (!is_null($firstMarkerData)) {
+        $address = papaya_strings::escapeHTMLChars(
+          $firstMarkerData['marker_address']
+        );
+      }
+
+      // get trip planner link by adding destination address to permalink
+      if (!empty($address)) {
+        $permaLink = $this->getPermaLinkUrl($static);
+        if (!empty($permaLink)) {
+          switch ($this->data['base']['api']['type']) {
+          case $this->apiTypeNames[0]: // google
+            $url = $permaLink.sprintf('&daddr=%s', $address);
+            break;
+          case $this->apiTypeNames[1]: // yahoo
+            $url = $permaLink.sprintf('&q2=%s', $address);
+            break;
+          }
         }
       }
     }
 
-    return NULL;
-  }
-
-  function getTripPlannerLinkXML(&$data, $type, $folderParam, $static = FALSE)  {
-    if (isset($data['trip_planner']) && !empty($data['trip_planner'])) {
-
-      $linkUrl = $this->getTripPlannerLinkUrl($data, $type, $folderParam, $static);
-      if (!is_null($linkUrl)) {
-        return sprintf('<trip-planner href="%s" static="%d">%s</trip-planner>'.LF,
-          papaya_strings::escapeHTMLChars($linkUrl),
-          (int)$static,
-          papaya_strings::escapeHTMLChars($data['trip_planner'])
-        );
-      }
-    }
-    return NULL;
+    return $url;
   }
 
   /**
-   * fetches set markers and serializes their data to be used in query string.
+   * Gets a trip planner link xml.
    *
-   * currently not implemented!!
+   * @param boolean $static Use a static context
+   * @return string link xml or nothing
+   */
+  function getTripPlannerLinkXml($static = FALSE)  {
+    $xml = '';
+
+    // depends on base / settings / markers data
+    if (!empty($this->data['base']) && !empty($this->data['settings'])
+        && !empty($this->data['markers'])) {
+      $data = &$this->data['settings']['trip_planner'];
+
+      if ($data['active'] == 1 && !empty($data['caption'])) {
+
+        $linkUrl = $this->getTripPlannerLinkUrl($static);
+        if (!empty($linkUrl)) {
+          $xml = sprintf(
+            '<trip-planner caption="%s" url="%s" static="%d" />'.LF,
+            papaya_strings::escapeHTMLChars($data['caption']),
+            papaya_strings::escapeHTMLChars($linkUrl),
+            (int)$static
+          );
+        }
+      }
+    }
+    return $xml;
+  }
+
+  /**
+   * Fetches set markers and serializes their data to be used in query string.
+   * Google Maps only!
    *
-   * @param array reference $data
    * @return string
    */
-  function getMarkersUriString(&$data, $folderParam) {
-    $this->loadMarkers($this->getFolderId($folderParam));
+  function getMarkersUriString() {
+    $uri = '';
 
-    $markers = 'markers=%s&';
-    $separator = '%7C'; // equals "|"
+    // depends on base / markers / static data
+    if (!empty($this->data['base']) && !empty($this->data['markers'])
+        && !empty($this->data['static'])) {
 
-    $positions = NULL;
-    $geoData = array();
+      // load markers
+      if (!(is_array($this->markers) && $this->markersCount > 0)) {
+        $this->loadMarkers($this->data['markers']['folder_id']);
+      }
+      if (is_array($this->markers) && $this->markersCount > 0) {
 
-    $dataMarkerColor = (isset($data['marker_color'])) ? $data['marker_color'] : 'red';
-    $colorCounter = 0;
-    $markerColor = 'red';
-    $markerColors = array(
-      'black', 'brown', 'green', 'purple', 'yellow', 'blue',
-      'gray', 'orange', 'red', 'white'
-    );
+        $markers = 'markers=%s&';
+        $separator = '%7C'; // equals "|"
 
-    if (is_array($this->markers) && $this->markersCount > 0) {
-      $decoration = ''; // todo
-      $size = 'default'; // todo
+        // initialize colors
+        $dataColor = (!empty($this->data['static']['markers']['color']))
+          ? $this->data['static']['markers']['color'] : 'red';
+        $colorCounter = 0;
+        $color = 'red';
+        $colors = array(
+          'black', 'brown', 'green', 'purple', 'yellow', 'blue',
+          'gray', 'orange', 'red', 'white'
+        );
 
-      foreach ($this->markers as $currentMarker) {
-        if ($dataMarkerColor == 'rotate') {
-          $markerColor = $markerColors[$colorCounter++];
-          if ($colorCounter >= count($markerColors)) {
-            $colorCounter = 0;
-          }
+        // set markers size
+        if ($this->data['static']['markers']['size'] != 'default') {
+          $size = $this->data['static']['markers']['size'];
         } else {
-         $markerColor = papaya_strings::escapeHTMLChars($dataMarkerColor);
+          $size = '';
         }
 
-        $marker[] = sprintf('%f,%f,%s%s%s',
-          $currentMarker['marker_lat'],
-          $currentMarker['marker_lng'],
-          $size,
-          $markerColor,
-          ($size == 'mid') ? $decoration : ''
+        // set markers decoration
+        if (!empty($this->data['static']['markers']['decoration'])
+            && $size == 'mid') {
+          $decoration = strtolower(
+            $this->data['static']['markers']['decoration']
+          );
+        } else {
+          $decoration = '';
+        }
+
+        foreach ($this->markers as $currentMarker) {
+          // add marker to uri
+          if ($dataColor == 'rotate') {
+            $color = $colors[$colorCounter++];
+            if ($colorCounter >= count($colors)) {
+              $colorCounter = 0;
+            }
+          } else {
+           $color = papaya_strings::escapeHTMLChars($dataColor);
+          }
+          $marker[] = sprintf('%f,%f,%s%s%s',
+            $currentMarker['marker_lat'],
+            $currentMarker['marker_lng'],
+            papaya_strings::escapeHTMLChars($size),
+            $color,
+            papaya_strings::escapeHTMLChars($decoration)
+          );
+        }
+
+        $uri = sprintf($markers, join($separator, $marker));
+      }
+    }
+    return $uri;
+  }
+
+  /**
+   * Calculates the center coordinates of all available markers.
+   *
+   * @return array geo position
+   */
+  function getMarkersCenterPoint($markersFolderId) {
+    $result = NULL;
+
+    // depends on base / settings / markers data
+    if (!empty($this->data['base'])) {
+
+      // check available markers or load them
+      if (!(is_array($this->markers) && $this->markersCount > 0)) {
+        $this->loadMarkers($markersFolderId);
+      }
+      if (is_array($this->markers) && $this->markersCount > 0) {
+
+        // get first geo data
+        $marker = array_shift($this->markers);
+        $minLat = $maxLat = floatval($marker['marker_lat']);
+        $minLng = $maxLng = floatval($marker['marker_lng']);
+
+        // assemble geo data
+        foreach ($this->markers as $marker) {
+          // get minima
+          if ($minLat > floatval($marker['marker_lat'])) {
+            $minLat = floatval($marker['marker_lat']);
+          }
+          if ($minLng > floatval($marker['marker_lng'])) {
+            $minLng = floatval($marker['marker_lng']);
+          }
+          // get maxima
+          if ($maxLat < floatval($marker['marker_lat'])) {
+            $maxLat = floatval($marker['marker_lat']);
+          }
+          if ($maxLng < floatval($marker['marker_lng'])) {
+            $maxLng = floatval($marker['marker_lng']);
+          }
+        }
+
+        $result = array(
+          'marker_lat' => ($maxLat-$minLat)/2 + $minLat,
+          'marker_lng' => ($maxLng-$minLng)/2 + $minLng
         );
       }
-
-      return sprintf($markers, join($separator, $marker));
     }
-    return '';
+
+    return $result;
   }
 
   /**
@@ -549,7 +872,7 @@ class output_geomaps extends base_geomaps {
         && count($aliasTreeObj->viewModes) > 0) {
       foreach ($aliasTreeObj->viewModes as $id => $mode) {
         $selected = '';
-        if ($data == $id) {
+        if ($data == $mode['viewmode_ext']) {
           $selected = ' selected="selected"';
         }
         $result .= sprintf('<option value="%s"%s>%s</option>',

@@ -34,64 +34,107 @@ class base_geomaps extends base_db {
    *
    * @var string $tableMarkers
    */
-  var $tableMarkers = '';
+  var $tableMarkers = NULL;
 
   /**
    * Database table for markers' folders
    *
    * @var string $tableFolders
    */
-  var $tableFolders = '';
+  var $tableFolders = NULL;
 
   /**
    * Database table for api keys
    *
    * @var string $tableKeys
    */
-  var $tableKeys    = '';
+  var $tableKeys = NULL;
 
   /**
    * Folders list
    *
    * @protected array $folders
    */
-  var $folders = array();
+  var $folders = NULL;
 
   /**
    * Markers list
    *
    * @protected array $markers
    */
-  var $markers = array();
+  var $markers = NULL;
 
   /**
    * Absolute amount of markers
    *
    * @protected integer $markersCount
    */
-  var $markersCount = 0;
+  var $markersCount = NULL;
 
   /**
    * Api keys list
    *
    * @var array $markers
    */
-  var $keys = array();
+  var $keys = NULL;
 
   /**
    * Absolute amount of keys
    *
    * @var integer $keysCount
    */
-  var $keysCount = 0;
+  var $keysCount = NULL;
+
+  /**
+   * Contains api type names
+   *
+   * @var array $apiTypeNames
+   */
+  var $apiTypeNames = NULL;
+
+  /**
+   * Contains api type titles
+   *
+   * @var array $apiTypeTitles
+   */
+  var $apiTypeTitles = NULL;
 
   /**
    * Main constructor to set table names
    */
   function __construct() {
+    // initialize db folder names
     $this->tableFolders = PAPAYA_DB_TABLEPREFIX.'_geomaps_folders';
     $this->tableMarkers = PAPAYA_DB_TABLEPREFIX.'_geomaps_markers';
-    $this->tableKeys    = PAPAYA_DB_TABLEPREFIX.'_geomaps_keys';
+    $this->tableKeys = PAPAYA_DB_TABLEPREFIX.'_geomaps_keys';
+
+    // initialize arrays
+    $this->folders = array();
+    $this->markers = array();
+    $this->keys = array();
+
+    // initialize counters
+    $this->markersCount = 0;
+    $this->keysCount = 0;
+
+    // initialize api names
+    $this->apiTypeNames = array(
+      0 => 'google',
+      1 => 'yahoo'
+    );
+
+    // initialize api titles
+    $this->apiTypeTitles = array(
+      0 => 'Google Maps',
+      1 => 'Yahoo Maps'
+    );
+  }
+
+  /**
+   * PHP4 constructor
+   */
+  function base_geomaps() {
+    $this->__construct();
   }
 
   /**
@@ -261,8 +304,11 @@ class base_geomaps extends base_db {
    * @return boolean status
    */
   function loadMarkers($folderId, $limit = NULL, $offset = NULL) {
-    $sql = "SELECT marker_id, marker_folder, marker_title,
-                   marker_desc, marker_address, marker_lat, marker_lng
+    $sql = "SELECT marker_id, marker_folder,
+                   marker_title, marker_desc,
+                   marker_addr_street, marker_addr_house, marker_addr_zip,
+                   marker_addr_city, marker_addr_country,
+                   marker_lat, marker_lng
               FROM %s
              WHERE marker_folder = %d
              ORDER BY marker_sort ASC";
@@ -294,8 +340,11 @@ class base_geomaps extends base_db {
     if ($useCache === TRUE && !empty($this->markers[$markerId])) {
       return TRUE;
     }
-    $sql = "SELECT marker_id, marker_folder, marker_title,
-                   marker_desc, marker_address, marker_lat, marker_lng
+    $sql = "SELECT marker_id, marker_folder,
+                   marker_title, marker_desc,
+                   marker_addr_street, marker_addr_house, marker_addr_zip,
+                   marker_addr_city, marker_addr_country,
+                   marker_lat, marker_lng
               FROM %s
              WHERE marker_id = %d";
     $params = array($this->tableMarkers, $markerId);
@@ -314,21 +363,15 @@ class base_geomaps extends base_db {
    * with additional Google Earth specific data.
    *
    * @param array $markers A list of markers.
-   * @param string $uniqueId Unique geo maps content identifier.
    * @param string $styleUrl Adds a style url, see admin_geomaps::exportMarkersKML
    * @param boolean $lookAt Adds lookAt-Point, see admin_geomaps::exportMarkersKML
    * @return stringt $result xml
    */
-  function getMarkersKML($markers = NULL, $uniqueId = NULL,
-                         $styleUrl = NULL, $lookAt = FALSE) {
+  function getMarkersBaseKML($markers = NULL, $styleUrl = NULL, $lookAt = FALSE) {
 
     // Use markers by param or loaded markers
     $markers = (is_array($markers) && count($markers) > 0)
       ? $markers : $this->markers;
-
-    // Use unique identifier by param or get a new one
-    $uniqueId = (empty($uniqueId)) ?
-      md5(uniqid(rand()+microtime())) : $uniqueId;
 
     if (is_array($markers) && count($markers) > 0) {
       // Get markers xml / kml
@@ -336,15 +379,14 @@ class base_geomaps extends base_db {
       foreach ($markers as $key => $marker) {
 
         $desc = papaya_strings::ensureUTF8($marker['marker_desc']);
-        $result .= sprintf('<Placemark uid="%s" >'.LF.
+        $result .= sprintf('<Placemark>'.LF.
                            '<name>%s</name>'.LF.
                            '<description>%s</description>'.LF.
                            '<Point>'.LF.
                            '<coordinates>%s</coordinates>'.LF.
                            '</Point>'.LF,
-          $uniqueId,
           $marker['marker_title'],
-          $this->getXHTMLString($desc, TRUE),
+          $this->getXHTMLString($desc, FALSE),
           papaya_strings::escapeHTMLChars($marker['marker_lng']).','.
           papaya_strings::escapeHTMLChars($marker['marker_lat']).',0');
 
@@ -378,6 +420,72 @@ class base_geomaps extends base_db {
     return '';
   }
 
+  /**
+   * Gets additional kml data and uses getMarkersBaseKML
+   * with additional Google Earth specific data.
+   *
+   * @param array $markers A list of markers.
+   * @param string $folderTitle
+   * @param string $fileName
+   * @return stringt $result xml
+   */
+  function getMarkersKML($markers, $folderTitle = NULL, $fileName = NULL) {
 
+    if (empty($folderTitle)) {
+      // Set folder title
+      $defaultFolderTitle = $this->getOption(
+        'default_folder_title', 'No folder title'
+      );
+      $folderTitle = $defaultFolderTitle;
+    }
+
+    if (empty($fileName)) {
+      $fileName = sprintf('geo_maps_export_%d.kml', time());
+    }
+
+    $result = sprintf('<kml xmlns="http://earth.google.com/kml/2.2">'.LF.
+                      '<name>%s</name>'.LF.
+                      '<Style id="sh_ylw-pushpin">'.LF.
+                      '<IconStyle>'.LF.
+                      '<scale>1.3</scale>'.LF.
+                      '<Icon>'.LF.
+                      '<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>'.LF.
+                      '</Icon>'.LF.
+                      '<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>'.LF.
+                      '</IconStyle>'.LF.
+                      '</Style>'.LF.
+                      '<Style id="sn_ylw-pushpin">'.LF.
+                      '<IconStyle>'.LF.
+                      '<scale>1.1</scale>'.LF.
+                      '<Icon>'.LF.
+                      '<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>'.LF.
+                      '</Icon>'.LF.
+                      '<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>'.LF.
+                      '</IconStyle>'.LF.
+                      '</Style>'.LF.
+                      '<StyleMap id="msn_ylw-pushpin">'.LF.
+                      '<Pair>'.LF.
+                      '<key>normal</key>'.LF.
+                      '<styleUrl>#sn_ylw-pushpin</styleUrl>'.LF.
+                      '</Pair>'.LF.
+                      '<Pair>'.LF.
+                      '<key>highlight</key>'.LF.
+                      '<styleUrl>#sh_ylw-pushpin</styleUrl>'.LF.
+                      '</Pair>'.LF.
+                      '</StyleMap>'.LF.
+                      '<Document>'.LF.
+                      '<Folder>'.LF.
+                      '<name>%s</name>'.LF.
+                      '%s'.LF.
+                      '</Folder>'.LF.
+                      '</Document>'.LF.
+                      '</kml>'.LF,
+      $fileName,
+      $folderTitle,
+      $this->getMarkersBaseKML($markers, '#msn_ylw-pushpin', TRUE)
+    );
+
+    return $result;
+  }
 
 }

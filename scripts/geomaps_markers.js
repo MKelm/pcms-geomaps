@@ -13,7 +13,7 @@
 *
 * @package module_geomaps
 * @author Martin Kelm <martinkelm@idxsolutions.de>
-* @author Bastian Feder <info@papaya-cms.com>
+* @author Bastian Feder <info@papaya-cms.com> <extensions>
 */
 
 function addMarkers(url, params) {
@@ -46,9 +46,16 @@ function getMarkersXML(url, params) {
   // Request xml data
   var xmlData = '';
   if (typeof xmlRequest != "undefined") {
-    xmlRequest.open('POST', url, false);
-    xmlRequest.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-    xmlRequest.send(params);
+
+    if (1 == 2) { // for debugging purposes
+      xmlRequest.open('GET', url+'?'+params, false);
+      xmlRequest.send(null);
+    } else { // default
+      xmlRequest.open('POST', url, false);
+      xmlRequest.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+      xmlRequest.send(params);
+    }
+
     if (xmlRequest.readyState == 4) {
       if (xmlRequest.status == 200) {
         xmlData = xmlRequest.responseXML;
@@ -98,12 +105,16 @@ function getMarkers(action, mode, setRotationTime, showDescription, zoomIntoFocu
   window.markerAction = action;
   description = '';
   if (mode == 'rotation') {
-    if (typeof setRotationTime != "undefined" &&
-        setRotationTime > 0 && setRotationTime != markerRotationTime) {
-      // store var in global context
-      window.markerRotationTime = setRotationTime;
+    if (typeof setRotationTime != "undefined" && setRotationTime > 0) {
+      if (typeof markerRotationTime == "undefined") {
+        // store var in global context
+        window.markerRotationTime = setRotationTime;
+      } else if (setRotationTime != markerRotationTime) {
+        // store var in global context
+        window.markerRotationTime = setRotationTime;
+      }
+      rotateMarker(0);
     }
-    rotateMarker(0);
   } else {
     if (typeof markers != "undefined") {
       for (var i = 0; i < markers.length; i++) {

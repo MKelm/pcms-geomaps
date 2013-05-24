@@ -60,7 +60,8 @@ function initYahooMaps(showCoor, zoomControl, panControl, typeControl,
       yahooMap[uniqueId].addTypeControl();
     }
 
-    if (centerLat > 0 && centerLng > 0 && centerZoom > 0) {
+    if (centerLat > -90 && centerLat < 90
+        && centerLng > -180 && centerLng < 180 && centerZoom > 0) {
       centerMap(centerLat, centerLng, centerZoom, mapType);
     }
   }

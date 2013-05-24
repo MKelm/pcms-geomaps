@@ -15,33 +15,58 @@
 * @author Martin Kelm <martinkelm@idxsolutions.de>
 */
 
-// Google geocoder object used by getCoordinates
-var googleGeocoder = null;
-
 // Get coordinates depends on active api
 // Note yahoo maps supports US only
 // The api type is set by script call in admin_gmaps::getMarkerDialog
-function getCoordinates(dialogId, addressDlgName, apiType) {
-  var addrField = document.getElementById(dialogId+'_'+addressDlgName);
+function getCoordinates(apiType, dialogId) {
 
-  if (addrField.value != "undefined" && addrField.value != "") {
+  // required fields
+  var addrFieldStreet = document.getElementById(dialogId+'_marker_addr_street');
+  var addrFieldCity = document.getElementById(dialogId+'_marker_addr_city');
+
+  if (typeof addrFieldStreet.value != "undefined" && addrFieldStreet.value != ""
+      && typeof addrFieldCity.value != "undefined" && addrFieldCity.value != "") {
+    var address = '';
+
+    // additional fields
+    var addrFieldHouse = document.getElementById(dialogId+'_marker_addr_house');
+    if (typeof addrFieldHouse.value != "undefined" && addrFieldHouse.value != '') {
+      address = address + addrFieldStreet.value + ' ' + addrFieldHouse.value + ', ';
+    } else {
+      address = address + addrFieldStreet.value + ', ';
+    }
+    var addrFieldZIP = document.getElementById(dialogId+'_marker_addr_zip');
+    if (typeof addrFieldZIP.value != "undefined" && addrFieldZIP.value != '') {
+      address = address + addrFieldZIP.value + ' ' + addrFieldCity.value + ', ';
+    } else {
+      address = address + addrFieldCity.value + ', ';
+    }
+    var addrFieldCountry = document.getElementById(dialogId+'_marker_addr_country');
+    if (addrFieldCountry.value != "undefined" && addrFieldCountry.value != '') {
+      address = address + addrFieldCountry.value;
+    }
+
     switch (apiType) {
       case 0:
-        getCoordinatesByGoogleMaps(addrField.value,
+        getCoordinatesByGoogleMaps(address,
           dialogId+"_marker_lat", dialogId+"_marker_lng");
         break;
       case 1:
-        getCoordinatesByYahooMaps(addrField.value,
+        getCoordinatesByYahooMaps(address,
           dialogId+"_marker_lat", dialogId+"_marker_lng");
         break;
     }
+  } else {
+    alert("Required fields to get coordinates:\n-> Street, City\n\n"
+      + "Optional fields:\n-> House number, ZIP code, Country");
   }
 }
 
 // Get coordinates by google maps api
 function getCoordinatesByGoogleMaps(address, latDlgId, lngDlgId) {
-  if (googleGeocoder == null) {
-    googleGeocoder = new GClientGeocoder();
+  // Google geocoder object used by getCoordinates
+  if (typeof window.googleGeocoder == "undefined") {
+    window.googleGeocoder = new GClientGeocoder();
   }
   googleGeocoder.getLatLng(
     address,

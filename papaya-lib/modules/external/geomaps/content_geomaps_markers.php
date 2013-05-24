@@ -1,6 +1,6 @@
 <?php
 /**
-* Marker data for xml http requests
+* Marker data KML for xml http requests or downloads
 *
 * @copyright 2007 by Martin Kelm - All rights reserved.
 * @link http://www.idxsolutions.de
@@ -22,29 +22,29 @@
 require_once(PAPAYA_INCLUDE_PATH.'system/base_content.php');
 
 /**
-* Marker data for xml http requests
+* Marker data KML for xml http requests or downloads
 *
 * @package module_geomaps
 * @author Martin Kelm <martinkelm@idxsolutions.de>
 */
 class content_geomaps_markers extends base_content {
 
-  var $paramName = 'gmaps';
+  var $paramName = 'gmps';
 
   var $cacheable = TRUE;
 
   var $editFields = array(
-    'default_folder' => array('Default folder', 'isNum', TRUE,
+    'default_folder' => array('Default Folder', 'isNum', TRUE,
       'function', 'callbackFoldersList'),
-    'folder_by_parameter' => array('Folder by parameter', 'isNum',
-      TRUE, 'combo', array(0 => 'no', 1 => 'yes'), '', 1)
+    'folder_by_parameter' => array('Folder By Parameter', 'isNum',
+      TRUE, 'combo', array(0 => 'no', 1 => 'yes'), NULL, 1)
   );
 
   /**
    * Get cache identifier related to given folder id.
    */
   function getCacheId() {
-    return md5('_'.$this->params['folder_id']);
+    return md5('_'.@$this->params['folder_id'].'_'.@$this->params['base_kml']);
   }
 
   /**
@@ -104,27 +104,34 @@ class content_geomaps_markers extends base_content {
   * @return string
   */
   function getParsedData() {
+    $this->setDefaultData();
     $result = '';
 
     if ($this->initOutputObject() === TRUE) {
 
-      $uniqueId = (isset($this->params['unique_id'])) ? $this->params['unique_id'] : NULL;
-
       // load makers of specified folder
       if ($this->data['folder_by_parameter'] == 1 &&
           isset($this->params['folder_id']) && $this->params['folder_id'] >= 0) {
-        $this->outputObj->loadMarkers(@$this->params['folder_id']);
+        $this->outputObj->loadMarkers($this->params['folder_id']);
       } else {
-        $this->outputObj->loadMarkers(@$this->data['default_folder']);
+        $this->outputObj->loadMarkers($this->data['default_folder']);
       }
 
       // show markers xml if any exists
       if (count($this->outputObj->markers) > 0) {
-        $result = '<markers >'.LF;
-        $result .= $this->outputObj->getMarkersKML(NULL, $uniqueId);
+        $result = sprintf('<markers base-kml="%d">'.LF,
+          @$this->params['base_kml']);
+
+        // get base kml for internal ajax communication
+        if (isset($this->params['base_kml']) && $this->params['base_kml'] == 1) {
+          $result .= $this->outputObj->getMarkersBaseKML(NULL);
+
+        } else {
+          // get full kml for regular outputs
+          $result .= $this->outputObj->getMarkersKML(NULL);
+        }
         $result .= '</markers>'.LF;
       }
-
     }
 
     return $result;

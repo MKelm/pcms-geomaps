@@ -1,32 +1,54 @@
 *Geo maps modules for papaya CMS 5*
 
-Revision 0.19, 2008-11-02
+Revision 0.20, 2008-11-10
 
 Authors:
 Martin Kelm <martinkelm@idxsolutions.de>
 Bastian Feder <info@papaya-cms.com> <extensions>
 
-*Template*
-Move "box_geomaps.xsl" to your (x)html template folder.
-Move "geomaps_markers.xsl" to your data template folder.
+Support and good fairy:
+geomaps@idxsolutions.de
 
-*Hint for Google Maps*
-You should use this unload event in your body element:
-<body onunload="if (typeof GUnload != 'undefined') GUnload();">
+*Templates*
+- move "box_geomaps.xsl" to your (x)html template folder
+- move "geomaps_markers.xsl" to your xml data template folder
+
+*geomaps_markers.xsl, views and mime types*
+- for internal ajax requests: text/xml (no session)
+- for public kml downloads: application/vnd.google-earth.kml+xml (no session)
 
 *License*
 GNU General Public Licence (GPL): gpl.txt
 
-*General todos*
-- Colors for dynamic markers
-- Optimize data, options and settings handling in output class
-- Extended address data (db)
-- Reimplement markers size / decorations
+*General todos / ideas / whishes*
+- Connector module
+- More colors for dynamic markers
+- OpenLayers support
+- Use xslt parser for KML export
+- More export formats
+- Import for KML, ...
 
 *Changelog*
 
-_Rev. 0.20 (2008-11-x)_
-- coming soon
+_Rev. 0.20 (2008-11-10)_
+- Refactored output again to get a better xml structure and options handling
+- Added a log error message for missing API keys (thanks to Bastian)
+- Optimized edit fields' arrangement in box modules
+- Set GUnload event to Google Maps initialization
+- Reimplemented static markers size / decorations
+- Fixed markers rotation mode
+- Fixed noscript content position in template
+- Added center modes for different ways to center map
+- Added a calculation method to get markers' center point (thanks to Bastian)
+- Added checks / corrections for zoom levels
+- Extended address data in database and modified backend dialogs
+- Fixed / extended get coordinates by address feature in backend
+- Fixed view modes selection
+- Fixed param name in content module and added base kml param for ajax requests
+- Added full kml data as default content output
+- Fixed latitude / longitude range checks
+- Fixed richtext description output and removed auto-breaklines
+- Fixed backend functions to change marker's position
 
 _Rev. 0.19 (2008-11-05)_
 - Changed "gmaps" naming to "geomaps" (use DB script to migrate!)
@@ -38,15 +60,16 @@ _Rev. 0.19 (2008-11-05)_
 - Enhanced KML export + Google Eath compatibility
 - Added option to use first marker as center point
 - Fixed and added new Google Maps types
+- Added optional CDATA option in markers data xslt
 
 _Rev. 0.18 (2008-10-31)_
-- Merged Google Maps extensions by Bastian Feder:
+- Merged Google Maps extensions by Bastian Feder (thanks!):
   * Static Google Map with markers
   * Permalink to Google Maps
   * Link to Google Maps trip planer
   * Zoom Into Focus
   * Extended marker settings in static maps (colors, size, decoration)
-  * Some JavaScript improvements
+  * JavaScript improvements
 
 _Rev. 0.17 (2008-08-01)_
 - Fixed Firefox3 JS-Bug in coordinates mode

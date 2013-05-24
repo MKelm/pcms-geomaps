@@ -13,7 +13,7 @@
 *
 * @package module_geomaps
 * @author Martin Kelm <martinkelm@idxsolutions.de>
-* @author Bastian Feder <info@papaya-cms.com>
+* @author Bastian Feder <info@papaya-cms.com> <extensions>
 */
 
 /**
@@ -23,8 +23,6 @@
  * The id-attribute must contain the string 'map_' + the string represented by the unique
  * parameter. There has to be another DOM element which can be identifies via an id-attribute
  * containing 'coor_' and the previous named unique id
- *
- * @param
  */
 function initGoogleMaps(showCoor, basicControl, scaleControl,
                         typeControl, overviewControl,
@@ -37,6 +35,13 @@ function initGoogleMaps(showCoor, basicControl, scaleControl,
     } else if (document.all) {
       var mapElement = document.all["map_"+uniqueId];
       var coorElement = document.all["coor_"+uniqueId];
+    }
+
+    // adds google maps unload event
+    window.onunload = function() {
+      if (typeof GUnload != "undefined") {
+        GUnload();
+      }
     }
 
     // store var in global context
@@ -87,7 +92,6 @@ function initGoogleMaps(showCoor, basicControl, scaleControl,
         googleMap.addControl(new GOverviewMapControl());
       }
 
-
       // observe mouse scrolling
       GMap2.prototype.wheelZoom = function(event) {
         if(event.cancelable) event.preventDefault();
@@ -100,7 +104,8 @@ function initGoogleMaps(showCoor, basicControl, scaleControl,
       GEvent.addDomListener(mapElement, "DOMMouseScroll", googleMap.wheelZoom);
       GEvent.addDomListener(mapElement, "mousewheel", googleMap.wheelZoom);
 
-      if (centerLat > 0 && centerLng > 0 && centerZoom > 0) {
+      if (centerLat > -90 && centerLat < 90
+          && centerLng > -180 && centerLng < 180 && centerZoom > 0) {
         centerMap(centerLat, centerLng, centerZoom, mapType);
       }
     }
@@ -148,7 +153,6 @@ function rotateMarker(i) {
   var point = new GLatLng(parseFloat(markers[i][2]),
                           parseFloat(markers[i][3]));
   var marker = null;
-  var uId = obj.currentTarget.id.replace(/map_/, '');
   if (typeof markers[i][1] != "undefined") {
     marker = setMarker(point, markers[i][1]);
   } else {
@@ -174,16 +178,16 @@ function setPolyline(color, width) {
     points[i] = new GLatLng(markers[i][2], markers[i][3]);
   }
   var colorValues = new Object;
-  colorValues['orange']     = '#FF7D00';
-  colorValues['blue']       = '#0000FF';
-  colorValues['lightblue']  = '#8080FF';
-  colorValues['brown']      = '#912D00';
-  colorValues['green']      = '#00FF00';
+  colorValues['orange'] = '#FF7D00';
+  colorValues['blue'] = '#0000FF';
+  colorValues['lightblue'] = '#8080FF';
+  colorValues['brown'] = '#912D00';
+  colorValues['green'] = '#00FF00';
   colorValues['lightgreen'] = '#80FF80';
-  colorValues['grey']       = '#808080';
-  colorValues['black']      = '#000000';
-  colorValues['maroon']     = '#A51B00';
-  colorValues['purple']     = '#800080';
+  colorValues['grey'] = '#808080';
+  colorValues['black'] = '#000000';
+  colorValues['maroon'] = '#A51B00';
+  colorValues['purple'] = '#800080';
 
   if (typeof colorValues[color] != "undefined" && points.length > 0) {
     var polyline = new GPolyline(points, color, 5);
@@ -201,8 +205,6 @@ function zoomIntoFocus(marker) {
   if (googleMaps[uniqueId].getZoom() == 0) {
     return 0;
   }
-
-  //var uId = obj.currentTarget.id.replace(/map_/, '');
 
   // get map boundaries
   var s = googleMaps[uniqueId].getBounds().getSouthWest().lng();

@@ -5,10 +5,14 @@
 <field name="marker_folder" type="integer" size="4" null="no"/>
 <field name="marker_title" type="string" size="200" null="no"/>
 <field name="marker_desc" type="string" size="65535" null="no"/>
-<field name="marker_address" type="string" size="255" null="yes"/>
 <field name="marker_lat" type="float" size="9,6" null="no"/>
 <field name="marker_lng" type="float" size="9,6" null="no"/>
 <field name="marker_sort" type="integer" size="2" null="no"/>
+<field name="marker_addr_street" type="string" size="255" null="yes"/>
+<field name="marker_addr_house" type="string" size="10" null="yes"/>
+<field name="marker_addr_zip" type="string" size="5" null="yes"/>
+<field name="marker_addr_city" type="string" size="255" null="yes"/>
+<field name="marker_addr_country" type="string" size="255" null="yes"/>
 </fields>
 <keys>
 <primary-key><field>marker_id</field></primary-key>

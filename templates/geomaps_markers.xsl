@@ -5,14 +5,27 @@
 
 <xsl:output method="xml" encoding="utf-8" standalone="no" indent="yes" omit-xml-declaration="no" />
 
-<xsl:template match="/page">
-  <!-- use cdata (1) or not (0) -->
-  <xsl:variable name="useCDATA" select="'0'" />
+  <xsl:template match="/page">
+    <xsl:choose>
+      <xsl:when test="content/topic/markers/@base-kml = 0">
+        <xsl:copy-of select="content/topic/markers/node()" />
+      </xsl:when>
+      <xsl:otherwise>
+        <kml xmlns="http://earth.google.com/kml/2.2">
+          <Document>
+            <xsl:call-template name="placemarks" />
+          </Document>
+        </kml>
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:template>
 
-  <kml xmlns="http://earth.google.com/kml/2.1">
-  <Document>
+  <xsl:template name="placemarks">
+    <!-- use cdata (1) or not (0) -->
+    <xsl:variable name="useCDATA" select="'1'" />
+
     <!-- put placemark node for each marker -->
-    <xsl:for-each select="content/topic/markers/*[name() = 'Placemark']">
+    <xsl:for-each select="content/topic/markers/Placemark">
       <Placemark>
         <xsl:copy-of select="./@*" />
         <!-- name / title -->
@@ -44,9 +57,6 @@
         </xsl:if>
       </Placemark>
     </xsl:for-each>
-
-  </Document>
-  </kml>
-</xsl:template>
+  </xsl:template>
 
 </xsl:stylesheet>
