@@ -1,14 +1,11 @@
 *Geo Maps DI / PCMS*
-(c) Martin Kelm <martinkelm@idxsolutions.de>
+(c) Martin Kelm <martinkelm@shrt.ws>
 
 This software package contains
 -> Geo Maps DI
 the javascript interface for geographic maps and
 -> Geo Maps for papaya CMS
 to mangage and generate compatible html outputs.
-
-Support and good fairy:
-geomaps@idxsolutions.de
 
 *Thanks to*
 Bastian Feder (see changelog)
@@ -25,9 +22,15 @@ GNU General Public Licence (GPL)
 http://www.slideshare.net/kelm/phpug-geo-maps-for-papaya-cms
 
 *Demo-Server*
-http://cdemo.idxsolutions.de
+http://cdemo.shrt.ws
 
 *Changelog*
+
+_Rev. 0.29 (2013-03-27)_
+- Fixed static google map
+- Improved static google map marker style, color and label
+- Fixed query string for map data
+- Fixed load markers in output
 
 _Rev. 0.28a (2010-05-22)_ (hotfix)
 - Fixed dynamic icon images with anchor in dynamic google map

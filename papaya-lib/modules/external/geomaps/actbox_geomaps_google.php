@@ -158,7 +158,6 @@ class actionbox_geomaps_google extends base_actionbox {
     ),
     'stc_markers_color' => array('Markers Color', 'isAlpha', TRUE, 'combo',
       array(
-        'rotate' => 'rotate' ,
         'black' => 'black', 'brown' => 'brown', 'green' => 'green',
         'purple' => 'purple', 'yellow' => 'yellow', 'blue' => 'blue',
         'gray' => 'gray', 'orange' => 'orange', 'red' => 'red',
@@ -173,9 +172,9 @@ class actionbox_geomaps_google extends base_actionbox {
         'tiny' => 'tiny'
       ), 'Select "mid" to activate markers decoration.', 'default'
     ),
-    'stc_markers_decoration' => array('Markers Decoration', 'isNoHTML',
+    'stc_markers_decoration' => array('Markers Label', 'isNoHTML',
       FALSE, 'input', 1,
-      'Set the decoration of the marker (works with lowercase chars only).'
+      'Set the label character of the marker.'
     ),
     'stc_alternative_text' => array('Alternative Text', 'isSomeText', FALSE,
       'input', 200, NULL, '')

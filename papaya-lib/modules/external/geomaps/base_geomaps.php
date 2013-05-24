@@ -455,15 +455,16 @@ class base_geomaps extends base_db {
              WHERE marker_folder = %d$markersCond
              ORDER BY marker_sort ASC";
     $params = array($this->tableMarkers, $folderId);
+    
+    if (empty($this->folders[$folderId])) {
+	  // load folder icon image data if available
+	  $this->loadFolder($folderId, TRUE);
+    }
 
     if ($res = $this->databaseQueryFmt($sql, $params, $limit, $offset)) {
       $this->markers = array();
       $this->markersCount = 0;
 
-      if (empty($this->folders[$folderId])) {
-        // load folder icon image data if available
-        $this->loadFolder($folderId, TRUE);
-      }
       while ($row = $res->fetchRow(DB_FETCHMODE_ASSOC)) {
         // check if an icon image has been set ...
         if (empty($row['marker_icon']) && !empty($this->folders[$folderId])

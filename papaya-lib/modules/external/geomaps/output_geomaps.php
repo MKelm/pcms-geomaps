@@ -494,9 +494,11 @@ class output_geomaps extends base_geomaps {
             count($this->data['markers']['ressource_params']) > 0) {
           $params = array_merge($params, $this->data['markers']['ressource_params']);
         }
+        $params = array('gmps' => $params);
         include_once(PAPAYA_INCLUDE_PATH.'system/Papaya/Request/Parameters.php');
         $paramsObj = new PapayaRequestParameters();
-        $queryString = '?'.$paramsObj->encodeQueryString($this->paramName, $params);
+        $paramsObj->set($params, NULL, '[]');
+        $queryString = '?'.$paramsObj->getQueryString('[]');
 
         // get data page url
         $dataPageUrl = papaya_strings::escapeHTMLChars(
@@ -588,7 +590,8 @@ class output_geomaps extends base_geomaps {
       case $this->apiTypeNames[0]: // google
 
         $url = sprintf(
-          'http://maps.google.com/staticmap?key=%s&center=%f,%f&'.
+          'http://maps.googleapis.com/maps/api/staticmap?'.
+          'key=%s&center=%f,%f&sensor=false&'.
           'zoom=%d&size=%s&maptype=%s&%s',
           $this->data['base']['api']['key'],
           $this->data['settings']['center']['lat'],
@@ -845,18 +848,20 @@ class output_geomaps extends base_geomaps {
       }
       if (is_array($this->markers) && $this->markersCount > 0) {
 
-        $markers = 'markers=%s&';
+        $markers = array();
         $separator = '%7C'; // equals "|"
 
         // initialize colors
         $dataColor = (!empty($this->data['static']['markers']['color']))
           ? $this->data['static']['markers']['color'] : 'red';
-        $colorCounter = 0;
-        $color = 'red';
-        $colors = array(
-          'black', 'brown', 'green', 'purple', 'yellow', 'blue',
-          'gray', 'orange', 'red', 'white'
-        );
+        if ($dataColor == 'rotate') {
+	      // colors
+          // 'black', 'brown', 'green', 'purple', 'yellow', 'blue',
+          // 'gray', 'orange', 'red', 'white'
+	      $color = 'red'; // rotation unavailable!
+		} else {
+		  $color = papaya_strings::escapeHTMLChars($dataColor);
+		}
 
         // set markers size
         if ($this->data['static']['markers']['size'] != 'default') {
@@ -865,36 +870,40 @@ class output_geomaps extends base_geomaps {
           $size = '';
         }
 
-        // set markers decoration
+        // set markers label (decoration)
         if (!empty($this->data['static']['markers']['decoration'])
             && $size == 'mid') {
-          $decoration = strtolower(
+          $label = strtoupper(
             $this->data['static']['markers']['decoration']
           );
         } else {
-          $decoration = '';
+          $label = '';
         }
 
         foreach ($this->markers as $currentMarker) {
           // add marker to uri
-          if ($dataColor == 'rotate') {
-            $color = $colors[$colorCounter++];
-            if ($colorCounter >= count($colors)) {
-              $colorCounter = 0;
-            }
-          } else {
-           $color = papaya_strings::escapeHTMLChars($dataColor);
-          }
-          $marker[] = sprintf('%f,%f,%s%s%s',
+          $marker[] = sprintf('%f,%f',
             $currentMarker['marker_lat'],
-            $currentMarker['marker_lng'],
-            papaya_strings::escapeHTMLChars($size),
-            $color,
-            papaya_strings::escapeHTMLChars($decoration)
+            $currentMarker['marker_lng']
           );
         }
+        
+        $colorString = !empty($color) ?
+          sprintf('color:%s%s', $color, $separator) : '';
+        
+        $sizeString = !empty($size) ?
+          sprintf('size:%s%s', $size, $separator) : '';
+          
+        $labelString = !empty($label) ?
+          sprintf('label:%s%s', $label, $separator) : '';
 
-        $uri = sprintf($markers, join($separator, $marker));
+        $uri = sprintf(
+          'markers=%s%s%s%s&', 
+          $colorString,
+          $sizeString,
+          $labelString,
+          join($separator, $marker)
+        );
       }
     }
     return $uri;
