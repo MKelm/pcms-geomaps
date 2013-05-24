@@ -1,6 +1,6 @@
 /* 
 *  Geo maps for papaya CMS 5: Google Maps script 
-*  Author: Martin Kelm, 03.06.2007
+*  Author: Martin Kelm, 27.06.2007
 */
 
 var googleMap = null;
@@ -99,4 +99,13 @@ function rotateMarker(i) {
 			}
 		}, markerRotationTime);
 	}
+}
+
+function setPolyline(color, width) {
+	var points = new Array();
+	for (i = 0; i < markers.length; i++) {
+		points[i] = new GLatLng(markers[i][2], markers[i][3]);
+	}
+	var polyline = new GPolyline(points, color, 5);
+	googleMap.addOverlay(polyline);
 }

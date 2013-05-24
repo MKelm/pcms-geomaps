@@ -1,6 +1,6 @@
 /* 
 *  Geo maps for papaya CMS 5: Markers script 
-*  Author: Martin Kelm, 03.06.2007
+*  Author: Martin Kelm, 27.06.2007
 */
 
 var markers = null;
@@ -63,5 +63,11 @@ function getMarkers(action, mode, setRotationTime) {
 		for (var i = 0; i < markers.length; i++) {
 			setMarker(getMarkerPoint(markers[i][2], markers[i][3]), markers[i][1]);
 		}
+	}
+}
+
+function getPolyline(color, width) {
+	if (markers.length > 0) {
+		setPolyline(color);
 	}
 }

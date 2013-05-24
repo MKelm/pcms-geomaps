@@ -1,6 +1,6 @@
 <?php
 /**
-* Marker data for xml http requests as kml
+* Marker data for xml http requests
 *
 * @package module_geomaps
 * @author Martin Kelm <martinkelm@idxsolutions.de>
@@ -12,7 +12,7 @@
 require_once(PAPAYA_INCLUDE_PATH.'system/base_content.php');
 
 /**
-* Marker data for xml http requests as kml
+* Marker data for xml http requests
 *
 * @package module_geomaps
 * @author Martin Kelm <martinkelm@idxsolutions.de>

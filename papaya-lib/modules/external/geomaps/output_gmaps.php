@@ -22,6 +22,32 @@ class output_gmaps extends base_gmaps {
 	var $gbPlugin = NULL;
 	var $geoIpDataFile = 'GeoLiteCity.dat';
 
+  function getMapsScriptFooter($data, $mfParamName, $mfParamValue) {
+    $result = "";
+  	if (isset($data['marker_url']) && trim($data['marker_url']) != '') {
+			$result .= sprintf("addMarkers('%s', '%s');".LF, 
+				papaya_strings::escapeHTMLChars($data['marker_url']),
+				$this->paramName.'['.$mfParamName.']='.$mfParamValue);
+			if ((boolean)$data['marker_polyline'] && 
+					isset($data['marker_polyline_color']) &&
+					isset($data['marker_polyline_width'])) {
+				$result .= sprintf("getPolyline('%s', %d);".LF, 
+				  $data['marker_polyline_color'], $data['marker_polyline_width']);
+			}
+			if ($data['marker_mode'] != 'hide') {
+				$result .= sprintf("getMarkers('%s', '%s', %d);".LF, 
+					$data['marker_action'], $data['marker_mode'], 
+					$data['marker_rotation']);
+			}
+		}
+		$result .= '//-->'.LF;
+		$result .= '</script>'.LF;
+		$result .= '<noscript>'.
+			papaya_strings::escapeHTMLChars($data['noscript_text']).
+			' </noscript>';
+		return $result;
+  }
+
   function getGoogleMapsScript($data, $uniqueId, $mfParamName, $mfParamValue) {
   	$result = '';
   	$apiKey = $this->loadApiKey(0);
@@ -46,19 +72,7 @@ class output_gmaps extends base_gmaps {
 				papaya_strings::escapeHTMLChars($data['center_zoom']),
 				papaya_strings::escapeHTMLChars($data['map_type']), $uniqueId
 			);
-			if (isset($data['marker_url']) && trim($data['marker_url']) != '') {
-				$result .= sprintf("addMarkers('%s', '%s');".LF, 
-					papaya_strings::escapeHTMLChars($data['marker_url']),
-					$this->paramName.'['.$mfParamName.']='.$mfParamValue);
-				$result .= sprintf("getMarkers('%s', '%s', %d);".LF, 
-					$data['marker_action'], $data['marker_mode'], 
-					$data['marker_rotation']);
-			}
-			$result .= '//-->'.LF;
-			$result .= '</script>'.LF;
-			$result .= '<noscript>'.
-				papaya_strings::escapeHTMLChars($data['noscript_text']).
-				' </noscript>';
+			$result .= $this->getMapsScriptFooter($data, $mfParamName, $mfParamValue);
 		}
 		return $result;
   }
@@ -69,7 +83,7 @@ class output_gmaps extends base_gmaps {
   	if ($apiId) {
 			$result = sprintf(
 				'<script type="text/javascript" '.
-				'src="http://api.maps.yahoo.com/ajaxymap?v=3.0&amp;appid=%s"> </script>'.LF, 
+				'src="http://api.maps.yahoo.com/ajaxymap?v=3.4&amp;appid=%s"> </script>'.LF, 
 				papaya_strings::escapeHTMLChars($apiId)
 			);
 			$result .= '<script type="text/javascript" src="papaya-script/geomarkers.js"> </script>';
@@ -86,19 +100,7 @@ class output_gmaps extends base_gmaps {
 				papaya_strings::escapeHTMLChars($data['center_zoom']),
 				papaya_strings::escapeHTMLChars($data['map_type']), $uniqueId
 			);
-			if (isset($data['marker_url']) && trim($data['marker_url']) != '') {
-				$result .= sprintf("addMarkers('%s', '%s');".LF, 
-					papaya_strings::escapeHTMLChars($data['marker_url']),
-					$this->paramName.'['.$mfParamName.']='.$mfParamValue);
-				$result .= sprintf("getMarkers('%s', '%s', %d);".LF, 
-					$data['marker_action'], $data['marker_mode'], 
-					$data['marker_rotation']);
-			}
-			$result .= '//-->'.LF;
-			$result .= '</script>'.LF;
-			$result .= '<noscript>'.
-				papaya_strings::escapeHTMLChars($data['noscript_text']).
-				' </noscript>';
+			$result .= $this->getMapsScriptFooter($data, $mfParamName, $mfParamValue);
 		}
 		return $result;
   }

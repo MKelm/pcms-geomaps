@@ -1,6 +1,6 @@
 /* 
 *  Geo maps for papaya CMS 5: Yahoo Maps script 
-*  Author: Martin Kelm, 03.06.2007
+*  Author: Martin Kelm, 27.06.2007
 */
 
 var yahooMap = null;
@@ -9,9 +9,10 @@ function initYahooMaps(showCoor, zoomControl, panControl, typeControl,
 											 centerLat, centerLng, centerZoom, 
 											 mapType, uniqueId) {					 	
 	yahooMap = new YMap(document.getElementById("map_"+uniqueId));
+	
 	if (showCoor) {
-		YEvent.Capture(yahooMap, "click",
-			function(yahooMap, point) {
+		YEvent.Capture(yahooMap, EventsList.MouseClick,
+			function(point) {
 				if (point) {
 					document.getElementById("coor_"+uniqueId).innerHTML	= 
 						'Latitude: ' + point.Lat + ' / ' + 'Longitude: ' + point.Lon;
@@ -38,8 +39,7 @@ function initYahooMaps(showCoor, zoomControl, panControl, typeControl,
 }
 
 function centerMap(lat, lng, zoom, mapType) {
-	var point = new YGeoPoint(parseFloat(lat),
-												  parseFloat(lng));							  
+	var point = new YGeoPoint(parseFloat(lat), parseFloat(lng));							  
   if (point) {
 		yahooMap.drawZoomAndCenter(point, zoom);
 	}
@@ -95,4 +95,13 @@ function rotateMarker(i) {
 			}
 		}, markerRotationTime);
 	}
+}
+
+function setPolyline(color, width) {
+	var points = new Array();
+	for (i = 0; i < markers.length; i++) {
+		points[i] = new YGeoPoint(markers[i][2], markers[i][3]);
+	}
+	var polyline = new YPolyline(points, color, 5, 0.6);
+	yahooMap.addOverlay(polyline);
 }

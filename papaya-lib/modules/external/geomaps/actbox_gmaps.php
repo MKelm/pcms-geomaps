@@ -103,17 +103,44 @@ class actionbox_gmaps extends base_actionbox {
 			$this->editFields[] = 'Markers';
 			$this->editFields['marker_url'] = array('Page url', 
         'isAlphaNumChar', FALSE, 'input', 200, 
-				'Needs markers page as relative url, i.e.: markers.45.data (optional, leave blank to disable markers)');
+				'Needs markers page as relative url, i.e.: markers.45.data '.
+				'(no value will disable function)');
 			$this->editFields['marker_folder'] = array('Folder', 'isNum', 
 			  TRUE, 'function', 'callbackFoldersList');
 			$this->editFields['marker_mode'] = array('Mode', 'isAlpha', 
-			  TRUE, 'combo', array('static' => 'Static', 'rotation' => 'Rotation'), 
-				'Rotation mode: Markers by coordinates are recommended', 'click');
+			  TRUE, 'combo', array('hide' => 'Hide', 'static' => 'Static', 
+			    'rotation' => 'Rotation'), 
+				'Note: Rotation mode opens description popups automatically', 'hide');
 			$this->editFields['marker_action'] = array('Mouse action', 'isAlpha', 
 			  TRUE, 'combo', array('click' => 'Click', 'mouseover' => 'Mouse over'), 
 				'', 'click');
 			$this->editFields['marker_rotation'] = array('Rotation time', 
 			  'isNum', TRUE, 'input', 5, 'In seconds, for rotation mode', 5000);
+			  
+			// polyline
+			$this->editFields[] = 'Polyline';
+			$this->editFields['marker_polyline'] = array('Active', 'isNum', 
+			  TRUE, 'combo', array(0 => 'No', 1 => 'Yes'), 
+			  'Needs markers', 0);
+			$this->editFields['marker_polyline_width'] = array('Width', 
+			  'isNum', TRUE, 'input', 2, '', 5);
+			if ($this->data['gmaps_type'] == 0) {
+				$this->editFields['marker_polyline_color'] = array('Color', 
+					'isNoHTML', TRUE, 'combo', 
+					array('#FF7D00' => 'orange', '#0000FF' => 'blue', '#8080FF' => 'lightblue',
+						'#912D00' => 'brown', '#00FF00' => 'green', '#80FF80' => 'lightgreen',
+						'#808080' => 'grey', '#000000' => 'black', '#A51B00' => 'maroon',
+						'#800080' => 'purple'), 
+					'', '#0000FF');
+			} else {
+				$this->editFields['marker_polyline_color'] = array('Polyline color', 
+					'isAlpha', TRUE, 'combo', 
+					array('orange' => 'orange', 'blue' => 'blue', 'lightblue' => 'lightblue',
+						'brown' => 'brown', 'green' => 'green', 'lightgreen' => 'lightgreen',
+						'grey' => 'grey', 'black' => 'black', 'maroon' => 'maroon',
+						'purple' => 'purple'), 
+					'', 'blue');
+			}
   	}
   }
   

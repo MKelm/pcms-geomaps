@@ -1,6 +1,6 @@
 *Geo maps modules for papaya CMS 5*
 
-Revision 0.12, 2007-06-21
+Revision 0.13, 2007-06-27
 Author: Martin Kelm
 E-Mail: martinkelm@idxsolutions.de
 
@@ -24,7 +24,7 @@ http://www.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz (~17mb)
 Move "gmaps_markers.xsl" to your template folder.
 
 *CSS*
-Add this div classes to your css stylesheet (you can modify their content):
+Add this css code to your stylesheet:
 div.geoMap {
 	width: 640px; 
 	height: 480px; 
@@ -40,6 +40,12 @@ GNU General Public Licence (GPL): gpl.txt
 
 
 *Changelog*
+
+_Rev. 0.13 (2007-06-27)_
+- added polyline output mode for content box modules
+- added polyline functions to java scripts
+- changed yahoo maps api from version 3.0 to 3.4
+- some other optimizations
 
 _Rev. 0.12 (2007-06-21)_
 - added marker data xsl template
@@ -65,7 +71,7 @@ _Rev. 0.10 (2007-05-31)_
 - improved back-end messages
 
 _Rev. 0.9 (2007-05-27)_
-- added export markers as kml function
+- added export markers to kml function
 - added markers kml/xml page (supports guestbook plugin)
 - added xml http requests to get markers from data page (js)
 - richtext editor initialization fixed

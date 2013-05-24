@@ -5,8 +5,8 @@
   <modules>
     <module type="box" guid="313efa4780ed0a433f46d0aa76f2dfaf" name="Geo maps" class="actionbox_gmaps" file="actbox_gmaps.php" outputfilter="no">Geo maps box using Google Maps or Yahoo Maps API</module>
     <module type="box" guid="4274485aeeaf1d420b193fc3351030df" name="Geo maps for guestbooks" class="actionbox_gmaps_gb" file="actbox_gmaps_gb.php" outputfilter="no">Geo maps box using Google Maps or Yahoo Maps API for guestbooks</module>
-    <module type="page" guid="5068a7d52a428b6e83f86a83d89e0210" name="Markers data as kml" class="content_gmaps_markers" file="content_gmaps_markers.php" outputfilter="yes">Data of markers for XML-HTTP requests as kml</module>
-    <module type="admin" guid="630cd0c01fd9044826e95e181c5a27d2" name="Geo maps" class="edmodule_gmaps" file="edmodule_gmaps.php" glyph="gmaps.gif">Manage markers and export as kml files</module>    
+    <module type="page" guid="5068a7d52a428b6e83f86a83d89e0210" name="Markers data" class="content_gmaps_markers" file="content_gmaps_markers.php" outputfilter="yes">Data of markers for XML-HTTP requests</module>
+    <module type="admin" guid="630cd0c01fd9044826e95e181c5a27d2" name="Geo maps" class="edmodule_gmaps" file="edmodule_gmaps.php" glyph="gmaps.gif">Manage markers and export to kml files</module>    
   </modules>
   <tables>
     <table name="gmaps_markers"/>
