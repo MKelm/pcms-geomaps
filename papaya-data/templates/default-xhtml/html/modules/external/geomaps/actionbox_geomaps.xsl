@@ -48,7 +48,8 @@
       </xsl:when>
       <xsl:when test="base/api/@type = 'google3'">
         <!-- google maps v3 -->
-        <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&amp;sensor=false"><xsl:comment><xsl:text> </xsl:text></xsl:comment></script>
+        <script src="http://maps.googleapis.com/maps/api/js?v=3.exp&amp;key={base/api/@key}&amp;sensor=false"><xsl:comment><xsl:text> </xsl:text></xsl:comment></script>
+        <script type="text/javascript" src="{base/@scripts-path}geomaps-di/google3.js"><xsl:comment><xsl:text> </xsl:text></xsl:comment></script>
       </xsl:when>
       <xsl:otherwise>
         <!-- yahoo maps -->
@@ -101,19 +102,14 @@
         <!-- google maps v3 -->
         <script type="text/javascript"><xsl:comment>
           var currentUniqueId = '<xsl:value-of select="base/@id" />';
-          var map;
-		  function initialize() {
-			var mapOptions = {
-			  zoom: <xsl:value-of select="settings/@zoom" />,
-			  center: new google.maps.LatLng(
-			    <xsl:value-of select="settings/center/@lat" />, 
-			    <xsl:value-of select="settings/center/@lng" />
-			  ),
-			  mapTypeId: google.maps.MapTypeId.<xsl:value-of select="settings/@type" />
-			};
-			map = new google.maps.Map(document.getElementById('map_<xsl:value-of select="base/@id" />'), mapOptions);
-		  }
-		  google.maps.event.addDomListener(window, 'load', initialize);
+          initGoogleMaps(<xsl:value-of select="base/@coor-mode" />,
+            <xsl:value-of select="settings/controls/@basic" />, <xsl:value-of select="settings/controls/@scale" />,
+            <xsl:value-of select="settings/controls/@type" />, <xsl:value-of select="settings/controls/@overview" />,
+            <xsl:value-of select="settings/center/@lat" />, <xsl:value-of select="settings/center/@lng" />, <xsl:value-of select="settings/@zoom" />,
+            google.maps.MapTypeId.<xsl:value-of select="settings/@type" />, currentUniqueId,
+            <xsl:value-of select="settings/@width" />, <xsl:value-of select="settings/@height" />
+          );
+          <xsl:call-template name="markers-js-content" />
         </xsl:comment></script>
       </xsl:when>
       <xsl:otherwise>

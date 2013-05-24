@@ -111,7 +111,7 @@ class output_geomaps extends base_geomaps {
   function setBaseData($apiType, $coorMode, $noScriptText, $linksTarget) {
 
     $apiKey = $this->getDistinctKey($_SERVER['HTTP_HOST'], $apiType, TRUE);
-    if ((!empty($apiKey['key_value']) || $apiType == 2 || $apiType == 3) &&
+    if ((!empty($apiKey['key_value']) || $apiType == 2) &&
         isset($this->apiTypeNames[$apiType])) {
 
       $this->data['base'] = array(

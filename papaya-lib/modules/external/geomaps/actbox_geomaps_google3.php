@@ -85,7 +85,7 @@ class actionbox_geomaps_google3 extends base_actionbox {
     'stg_center_lng' => array('Longitude', '/[\+\-]?\d+(\.\d+)?/', TRUE, 'input',
       50, NULL, 0),
 
-    /*'Markers KML',
+    'Markers KML',
     'mrk_page_id' => array(
       'Page Id', 'isNum', FALSE, 'pageid', 10,
       'Set a page id greater than zero to use an extern page to load
@@ -96,16 +96,15 @@ class actionbox_geomaps_google3 extends base_actionbox {
       'callbackViewModesList', 'Select a KML view mode.'),
     'mrk_folder_id' => array('Folder', 'isNum', TRUE, 'function',
       'callbackFoldersList'),
-    */
 
-    /*'Markers',
+    'Markers',
     'mrk_active' => array('Active', 'isNum', TRUE, 'yesno',
       NULL, 'Needs a valid KML data, see above.', 0),
-    'mrk_clusterer' => array('Clusterer', 'isNum', TRUE, 'yesno',
-      NULL, NULL, 0),
-    'mrk_zoom_into_focus' => array('Zoom Into Focus', 'isNum', TRUE, 'yesno',
-      NULL, NULL, 0),
-    'mrk_show_description' => array('Show Description', 'isNum', TRUE, 'yesno',
+    /*'mrk_clusterer' => array('Clusterer', 'isNum', TRUE, 'yesno',
+      NULL, NULL, 0),*/
+    /*'mrk_zoom_into_focus' => array('Zoom Into Focus', 'isNum', TRUE, 'yesno',
+      NULL, NULL, 0),*/
+    /*'mrk_show_description' => array('Show Description', 'isNum', TRUE, 'yesno',
       NULL, NULL, 0),
     'mrk_mouse_desc_action' => array('Description Action', 'isAlpha',
       TRUE, 'combo', array(
@@ -295,16 +294,16 @@ class actionbox_geomaps_google3 extends base_actionbox {
           'folder',
           $this->data['mrk_folder_id'],
           'red', // TODO dynamic markers color
-          $this->data['mrk_mode'],
-          $this->data['mrk_rotation'],
-          $this->data['mrk_show_description'],
-          $this->data['mrk_mouse_desc_action'],
-          $this->data['mrk_zoom_into_focus'],
-          $this->data['mrk_polyline_active'],
-          $this->data['mrk_polyline_color'],
-          $this->data['mrk_polyline_size'],
+          'static', //$this->data['mrk_mode'],
+          0, //$this->data['mrk_rotation'],
+          1, //$this->data['mrk_show_description'],
+          'click', //$this->data['mrk_mouse_desc_action'],
+          0, //$this->data['mrk_zoom_into_focus'],
+          0, //$this->data['mrk_polyline_active'],
+          'red', //$this->data['mrk_polyline_color'],
+          5, //$this->data['mrk_polyline_size'],
           NULL,
-          $this->data['mrk_clusterer']
+          0 //$this->data['mrk_clusterer']
         );
       } else {
         $markersData = TRUE;

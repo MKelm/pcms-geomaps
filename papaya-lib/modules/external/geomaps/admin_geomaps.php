@@ -231,6 +231,27 @@ class admin_geomaps extends base_geomaps {
 
     return $success;
   }
+  
+  function getApiTitle($apiType = NULL) {
+	$apiTitle = '';
+	if ($apiType == NULL && isset($this->params['key_type'])) {
+	  $apiType = $this->params['key_type'];
+	}
+
+	switch($apiType) {
+	  case 0:
+		$apiTitle = 'Google Maps API V2';
+		break;
+	  case 3:
+		$apiTitle = 'Google Maps API V3';
+		break;
+	  case 1:
+		$apiTitle = 'Yahoo Maps API';
+		break;
+	}
+	
+	return $apiTitle;
+  }
 
   /**
    * Exectute spatial points generation to perform further spatial calculations.
@@ -274,9 +295,7 @@ class admin_geomaps extends base_geomaps {
         } elseif (isset($this->params['key_host'])
                   && !empty($this->params['key_host'])) {
 
-          $apiTitle = (isset($this->params['key_type'])
-                       && $this->params['key_type'] == 0)
-            ? 'Google Maps API' : 'Yahoo Maps API';
+          $apiTitle = $this->getApiTitle();
 
           $this->addMsg(MSG_INFO, sprintf(
             $this->_gt('A %s key for "%s" exists already.'),
@@ -301,9 +320,7 @@ class admin_geomaps extends base_geomaps {
           } elseif (isset($this->params['key_host'])
                     && !empty($this->params['key_host'])) {
 
-            $apiTitle = (isset($this->params['key_type'])
-                         && $this->params['key_type'] == 0)
-              ? 'Google Maps API' : 'Yahoo Maps API';
+            $apiTitle = $this->getApiTitle();
 
             $this->addMsg(MSG_INFO, sprintf(
               $this->_gt('A %s key for "%s" does not exist.'),
@@ -321,9 +338,7 @@ class admin_geomaps extends base_geomaps {
         && $this->params['key_id'] > 0) {
 
       if ($this->deleteKey($this->params['key_id'])) {
-        $apiTitle = (isset($this->params['key_type'])
-                     && $this->params['key_type'] == 0)
-          ? 'Google Maps API' : 'Yahoo Maps API';
+        $apiTitle = $this->getApiTitle();
 
         $this->addMsg(MSG_INFO, sprintf($this->_gt('%s key (%s) deleted.'),
           $this->_gt($apiTitle), $this->params['key_id']));
@@ -561,8 +576,8 @@ class admin_geomaps extends base_geomaps {
       } else {
         $this->addMsg(MSG_INFO, 'No keys added yet.');
       }
-      $text = '<a href="http://www.google.com/apis/maps" target="_blank">Google Maps API Keys</a><br />'.
-      '<a href="http://search.yahooapis.com/webservices/register_application" target="_blank">Yahoo Maps API IDs</a><br />';
+      $text = '<a href="https://developers.google.com/maps/documentation/javascript/tutorial#api_key" target="_blank">Google Maps API Keys</a><br />'.
+      '<a href="https://developer.apps.yahoo.com/wsregapp/" target="_blank">Yahoo Maps API IDs</a><br />';
       $result = '<panel title="'.papaya_strings::escapeHTMLChars($this->_gt('Get your keys here')).'">'.
         '<sheet width="100%" align="center"><text><div style="padding: 0px 5px 0px 5px; ">'.
         $text.'</div></text></sheet></panel>';
@@ -888,7 +903,11 @@ class admin_geomaps extends base_geomaps {
     $fields = array(
       'key_type' => array(
         'Type', 'isNum', TRUE, 'combo',
-        array('Google Maps API', 'Yahoo Maps API'), '', 0
+        array(
+          0 => 'Google Maps API V2', 
+          3 => 'Google Maps API V3',
+          1 => 'Yahoo Maps API'
+        ), '', 0
       ),
       'key_host' => array(
         'Host', 'isAlphaNumChar', TRUE, 'input', 200
@@ -1004,8 +1023,8 @@ class admin_geomaps extends base_geomaps {
         'key_type' => $key['key_type'],
         'confirm_delete' => 1
       );
-      $apiTitle = ($key['key_type'] == 0) ? 'Google Maps API' :
-        'Yahoo Maps API';
+        
+      $apiTitle = $this->getApiTitle($key['key_type']);
 
       $msg = sprintf($this->_gt('Do you want to delete the %s key (%d)?'),
         $apiTitle, $this->params['key_id']);
@@ -1357,8 +1376,7 @@ class admin_geomaps extends base_geomaps {
     foreach ($this->keys as $keyId => $key) {
       $editLink = $this->getLink(array('cmd' => 'edit_key',
         'key_id' => $keyId));
-      $apiTitle = ($key['key_type'] == 0) ? 'Google Maps API' :
-        'Yahoo Maps API';
+      $apiTitle = $this->getApiTitle($key['key_type']);
       $result .= sprintf('<listitem image="%s" href="%s" title="%s">'.LF,
         $this->images['items-permission'], $editLink,
         papaya_strings::escapeHTMLChars($apiTitle));
@@ -1574,8 +1592,7 @@ class admin_geomaps extends base_geomaps {
   }
 
   function saveKey($params, $new = FALSE) {
-    $apiTitle = ($params['key_type'] == 0) ? 'Google Maps API' :
-      'Yahoo Maps API';
+    $apiTitle = $this->getApiTitle($key['key_type']);
     if ($new) {
       $newId = $this->databaseInsertRecord($this->tableKeys, 'key_id',
         array(

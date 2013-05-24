@@ -13,11 +13,6 @@ Bastian Feder (see changelog)
 *License*
 GNU General Public Licence (GPL)
 
-*General todos / ideas / whishes*
-- more features for OpenLayers
-- KML import ...
-- Use xslt parser for KML export?
-
 *Presentation*
 http://www.slideshare.net/kelm/phpug-geo-maps-for-papaya-cms
 
@@ -25,6 +20,13 @@ http://www.slideshare.net/kelm/phpug-geo-maps-for-papaya-cms
 http://cdemo.shrt.ws
 
 *Changelog*
+
+_Rev. 0.31 (2013-04-08)_
+- Extended API key management to support Google Maps API V3
+- Added JavaScript file for Google Maps API V3
+- Added markers support for Google Maps API V3 map
+- Added marker content by click for Google Maps API V3 map
+- Added marker icons for Google Maps API V3 map
 
 _Rev. 0.30 (2013-04-06)_
 - Added simple Google Maps API V3 map module
