@@ -1,1 +1,119 @@
-eval(function(p,a,c,k,e,d){e=function(c){return(c<a?"":e(parseInt(c/a)))+((c=c%a)>35?String.fromCharCode(c+29):c.toString(36))};if(!''.replace(/^/,String)){while(c--){d[e(c)]=k[c]||e(c)}k=[function(e){return d[e]}];e=function(){return'\\w+'};c=1};while(c--){if(k[c]){p=p.replace(new RegExp('\\b'+e(c)+'\\b','g'),k[c])}}return p}('d 7=19;9 1m(x,L,Q,S,J,F,v,m,q){7=c 13(y.A("10"+q));a(x){f.j(7,h.t,9(8){a(8){y.A("1a"+q).1j=\'1b: \'+8.1h+\' / \'+\'1d: \'+8.1e}})}1f(L){N 1:7.1g();H;N 2:7.1i();H}a(Q){7.1k()}a(S){7.15()}K(J,F,v,m)}9 K(l,w,C,m){d 8=c n(k(l),k(w));a(8){7.G(8,C)}7.W(m)}9 X(l,D){P c n(k(l),k(D))}9 E(8,e){a(p 8!="B"){d 4=c Y(8);a(p e!="B"&&e.s>0){a(I==\'M\'){f.j(4,h.t,9(){4.g(e)})}o{f.j(4,h.O,9(){4.g(e)})}}7.z(4);P 4}}9 u(i){d 8=c n(b[i][2],b[i][3]);4=E(8);a(p 4=="11"){7.G(8,7.16());4.g(b[i][1]);a(I==\'M\'){f.j(4,h.t,9(){4.g(b[i][1])})}o{f.j(4,h.O,9(){4.g(b[i][1])})}1l(9(){4.U();7.V(4);a(i<b.s-1){u(i+1)}o{u(0)}},Z)}}9 12(R,14){d r=c 17();1c(i=0;i<b.s;i++){r[i]=c n(b[i][2],b[i][3])}d T=c 18(r,R,5,0.6);7.z(T)}',62,85,'||||marker|||yahooMap|point|function|if|markers|new|var|text|YEvent|openSmartWindow|EventsList||Capture|parseFloat|lat|mapType|YGeoPoint|else|typeof|uniqueId|points|length|MouseClick|rotateMarker|centerZoom|lng|showCoor|document|addOverlay|getElementById|undefined|zoom|long|setMarker|centerLng|drawZoomAndCenter|break|markerAction|centerLat|centerMap|zoomControl|click|case|MouseOver|return|panControl|color|typeControl|polyline|closeSmartWindow|removeOverlay|setMapType|getMarkerPoint|YMarker|markerRotationTime|map_|object|setPolyline|YMap|width|addTypeControl|getZoomLevel|Array|YPolyline|null|coor_|Latitude|for|Longitude|Lon|switch|addZoomShort|Lat|addZoomLong|innerHTML|addPanControl|setTimeout|initYahooMaps'.split('|'),0,{}))
+/**
+* Geo maps for papaya CMS 5: Yahoo Maps script 
+*
+* @copyright 2007 by Martin Kelm - All rights reserved.
+* @link http://www.idxsolutions.de
+* @licence GNU General Public Licence (GPL) 2 http://www.gnu.org/copyleft/gpl.html
+*
+* You can redistribute and/or modify this script under the terms of the GNU General Public
+* License (GPL) version 2, provided that the copyright and license notes, including these
+* lines, remain unmodified. This script is distributed in the hope that it will be useful, but
+* WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+* FOR A PARTICULAR PURPOSE.
+* 
+* @package module_geomaps
+* @author Martin Kelm <martinkelm@idxsolutions.de>
+*/
+
+var yahooMap = null;
+
+function initYahooMaps(showCoor, zoomControl, panControl, typeControl, 
+											 centerLat, centerLng, centerZoom, 
+											 mapType, uniqueId) {					 	
+	yahooMap = new YMap(document.getElementById("map_"+uniqueId));
+	
+	if (showCoor) {
+		YEvent.Capture(yahooMap, EventsList.MouseClick,
+			function(point) {
+				if (point) {
+					document.getElementById("coor_"+uniqueId).innerHTML	= 
+						'Latitude: ' + point.Lat + ' / ' + 'Longitude: ' + point.Lon;
+				}
+			}
+		);
+	}
+		
+	switch (zoomControl) {
+		case 1: 
+			yahooMap.addZoomShort();
+			break;
+		case 2: 
+			yahooMap.addZoomLong();
+			break;
+	}
+	if (panControl) {
+		yahooMap.addPanControl();
+	}
+	if (typeControl) {
+		yahooMap.addTypeControl();
+	}
+	centerMap(centerLat, centerLng, centerZoom, mapType);
+}
+
+function centerMap(lat, lng, zoom, mapType) {
+	var point = new YGeoPoint(parseFloat(lat), parseFloat(lng));							  
+  if (point) {
+		yahooMap.drawZoomAndCenter(point, zoom);
+	}
+	yahooMap.setMapType(mapType);
+}
+
+function getMarkerPoint(lat, long) {	
+	return new YGeoPoint(parseFloat(lat), parseFloat(long));
+}
+
+function setMarker(point, text) {
+	if (typeof point != "undefined") {
+		var marker = new YMarker(point);
+    if (typeof text != "undefined" && text.length > 0) {
+    	if (markerAction == 'click') {
+				YEvent.Capture(marker, EventsList.MouseClick, function() {
+					marker.openSmartWindow(text);
+				});
+			} else {
+				YEvent.Capture(marker, EventsList.MouseOver, function() {
+					marker.openSmartWindow(text);
+				});
+			}
+		}
+		yahooMap.addOverlay(marker);
+		return marker;
+	}
+}
+
+function rotateMarker(i) {
+	var point = new YGeoPoint(markers[i][2], markers[i][3]);
+	
+	marker = setMarker(point);
+	if (typeof marker == "object") {
+		yahooMap.drawZoomAndCenter(point, yahooMap.getZoomLevel());
+		marker.openSmartWindow(markers[i][1]);
+		if (markerAction == 'click') {
+			YEvent.Capture(marker, EventsList.MouseClick, function() {
+				marker.openSmartWindow(markers[i][1]);
+			});
+		} else {
+			YEvent.Capture(marker, EventsList.MouseOver, function() {
+				marker.openSmartWindow(markers[i][1]);
+			});
+		}
+		setTimeout(function() {
+			marker.closeSmartWindow();
+			yahooMap.removeOverlay(marker);
+			if (i < markers.length-1) {
+				rotateMarker(i+1);
+			} else {
+				rotateMarker(0);
+			}
+		}, markerRotationTime);
+	}
+}
+
+function setPolyline(color, width) {
+	var points = new Array();
+	for (i = 0; i < markers.length; i++) {
+		points[i] = new YGeoPoint(markers[i][2], markers[i][3]);
+	}
+	var polyline = new YPolyline(points, color, 5, 0.6);
+	yahooMap.addOverlay(polyline);
+}

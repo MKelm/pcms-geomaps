@@ -1,1 +1,84 @@
-eval(function(p,a,c,k,e,d){e=function(c){return(c<a?"":e(parseInt(c/a)))+((c=c%a)>35?String.fromCharCode(c+29):c.toString(36))};if(!''.replace(/^/,String)){while(c--){d[e(c)]=k[c]||e(c)}k=[function(e){return d[e]}];e=function(){return'\\w+'};c=1};while(c--){if(k[c]){p=p.replace(new RegExp('\\b'+e(c)+'\\b','g'),k[c])}}return p}('j=m;3 8=2.9("Y");8.Z=\'8\';8.G=\'H\';8.6=\'I\';8.J=C;3 5=2.b("K");3 f=\'\';d(E.z){f=q(E.z(5,m).h)}D d(L.M.A){f=q(5.A.h)}5.v.h=(f-N)+\'w\';3 B=5.O;c=2.9(\'P\');c.Q=0;c.R=0;c.v.h=f+\'w\';3 n=2.9(\'T\');c.7(n);3 e=2.9(\'e\');n.7(e);3 4=2.9(\'4\');e.7(4);4.7(5);3 4=2.9(\'4\');e.7(4);4.7(8);B.7(c);l C(){3 o=2.b("F").6;d(o==0){u(5.6,"r","s")}D d(o==1){p(5.6,"r","s")}}l u(i,k,g){d(j==m){j=t U()}j.V(i,l(a){2.b(k).6=a.y;2.b(g).6=a.x})}l p(i,k,g){3 a=t S(i);2.b(k).6=a.W;2.b(g).6=a.X}',62,62,'||document|var|td|addrField|value|appendChild|button|createElement|point|getElementById|inputTable|if|tr|cssWidth|lngDlgId|width|address|googleGeocoder|latDlgId|function|null|tb|apiType|getCoordinatesByYahooMaps|parseInt|dlg_marker_lat|dlg_marker_lng|new|getCoordinatesByGoogleMaps|style|px|||getComputedStyle|currentStyle|parentForm|gmapsGetCoordinates|else|window|dlg_api_type|className|dialogPopupButton|Get|onclick|dlg_marker_address|this|editField|65|parentNode|table|cellSpacing|cellPadding|YGeoPoint|tbody|GClientGeocoder|getLatLng|Lat|Lon|input|type'.split('|'),0,{}))
+/**
+* Geo maps for papaya CMS 5: Administration script
+*
+* @copyright 2007 by Martin Kelm - All rights reserved.
+* @link http://www.idxsolutions.de
+* @licence GNU General Public Licence (GPL) 2 http://www.gnu.org/copyleft/gpl.html
+*
+* You can redistribute and/or modify this script under the terms of the GNU General Public
+* License (GPL) version 2, provided that the copyright and license notes, including these
+* lines, remain unmodified. This script is distributed in the hope that it will be useful, but
+* WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+* FOR A PARTICULAR PURPOSE.
+* 
+* @package module_geomaps
+* @author Martin Kelm <martinkelm@idxsolutions.de>
+*/
+
+googleGeocoder = null;
+
+var button = document.createElement("input");
+button.type = 'button';
+button.className = 'dialogPopupButton';
+button.value = 'Get';
+button.onclick = gmapsGetCoordinates;
+
+var addrField = document.getElementById("dlg_marker_address");
+var cssWidth = '';
+if (window.getComputedStyle) {
+	cssWidth = parseInt(window.getComputedStyle(addrField, null).width);
+} else if (this.editField.currentStyle) {
+	cssWidth = parseInt(addrField.currentStyle.width);  
+}
+addrField.style.width = (cssWidth - 65)+'px';
+var parentForm = addrField.parentNode;
+
+inputTable = document.createElement('table');
+inputTable.cellSpacing = 0;
+inputTable.cellPadding = 0;
+inputTable.style.width = cssWidth+'px';
+
+var tb = document.createElement('tbody');
+inputTable.appendChild(tb);
+var tr = document.createElement('tr');
+tb.appendChild(tr);
+
+var td = document.createElement('td');
+tr.appendChild(td);
+td.appendChild(addrField);
+
+var td = document.createElement('td');
+tr.appendChild(td);
+td.appendChild(button);
+
+parentForm.appendChild(inputTable);
+
+function gmapsGetCoordinates() {
+	var apiType = document.getElementById("dlg_api_type").value;
+	if (apiType == 0) {
+		getCoordinatesByGoogleMaps(addrField.value, 
+		  "dlg_marker_lat", "dlg_marker_lng");
+	} else if (apiType == 1) {
+		getCoordinatesByYahooMaps(addrField.value, 
+		  "dlg_marker_lat", "dlg_marker_lng");
+	}
+}
+
+function getCoordinatesByGoogleMaps(address, latDlgId, lngDlgId) {
+	if (googleGeocoder == null) {
+		googleGeocoder = new GClientGeocoder();
+	}
+	googleGeocoder.getLatLng(
+		address,
+		function(point) {
+			document.getElementById(latDlgId).value	= point.y;
+			document.getElementById(lngDlgId).value = point.x;
+		}
+	);
+}
+
+function getCoordinatesByYahooMaps(address, latDlgId, lngDlgId) {
+	var point = new YGeoPoint(address);
+  document.getElementById(latDlgId).value	= point.Lat;
+	document.getElementById(lngDlgId).value = point.Lon;
+}

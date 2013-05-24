@@ -1,1 +1,85 @@
-eval(function(p,a,c,k,e,d){e=function(c){return(c<a?"":e(parseInt(c/a)))+((c=c%a)>35?String.fromCharCode(c+29):c.toString(36))};if(!''.replace(/^/,String)){while(c--){d[e(c)]=k[c]||e(c)}k=[function(e){return d[e]}];e=function(){return'\\w+'};c=1};while(c--){if(k[c]){p=p.replace(new RegExp('\\b'+e(c)+'\\b','g'),k[c])}}return p}('7 4=u;7 o=u;7 j=1b;9 12(h,c){6=q(h,c);8(6){t(6)}}9 q(h,c){7 5=l;7 6=l;8(A.n){5=d n();5.J(\'16/17\')}z 8(A.m){C{5=d m("18.p")}y(e){C{5=d m("15.p")}y(e){}}}5.11(\'H\',h,l);5.X(\'K-L\',\'M/x-N-O-P\');5.S(c);8(5){6=5.V}W 6}9 t(6){4=d v();7 b=6.g(\'Z\');w(i=0;i<b.k;i++){4[i]=v();4[i][0]=2;4[i][1]=b[i].g(\'10\')[0].D.E;7 f=b[i].g(\'14\')[0].g(\'f\')[0].D.E.F(",");4[i][2]=f[0];4[i][3]=f[1]}}9 I(r,s,a){o=r;8(s==\'T\'){8(Q a!="U"&&a>0&&a!=j){j=a}Y(0)}z{w(7 i=0;i<4.k;i++){19(G(4[i][2],4[i][3]),4[i][1])}}}9 13(B,1a){8(4.k>0){R(B)}}',62,74,'||||markers|xmlRequest|xmlDocument|var|if|function|setRotationTime|placemarkNodes|params|new||coordinates|getElementsByTagName|url||markerRotationTime|length|false|ActiveXObject|XMLHttpRequest|markerAction|XMLHTTP|getMarkersXML|action|mode|parseMarkersXML|null|Array|for||catch|else|window|color|try|firstChild|data|split|getMarkerPoint|POST|getMarkers|overrideMimeType|Content|Type|application|www|form|urlencoded|typeof|setPolyline|send|rotation|undefined|responseXML|return|setRequestHeader|rotateMarker|Placemark|description|open|addMarkers|getPolyline|Point|Microsoft|text|xml|Msxml2|setMarker|width|5000'.split('|'),0,{}))
+/**
+* Geo maps for papaya CMS 5: Markers script 
+*
+* @copyright 2007 by Martin Kelm - All rights reserved.
+* @link http://www.idxsolutions.de
+* @licence GNU General Public Licence (GPL) 2 http://www.gnu.org/copyleft/gpl.html
+*
+* You can redistribute and/or modify this script under the terms of the GNU General Public
+* License (GPL) version 2, provided that the copyright and license notes, including these
+* lines, remain unmodified. This script is distributed in the hope that it will be useful, but
+* WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+* FOR A PARTICULAR PURPOSE.
+* 
+* @package module_geomaps
+* @author Martin Kelm <martinkelm@idxsolutions.de>
+*/
+
+var markers = null;
+var markerAction = null;
+var markerRotationTime = 5000;
+
+function addMarkers(url, params) {
+	xmlDocument = getMarkersXML(url, params);
+	if (xmlDocument) {
+	  parseMarkersXML(xmlDocument);
+	}
+}
+
+function getMarkersXML(url, params) {
+	var xmlRequest = false;
+	var xmlDocument = false;
+	if (window.XMLHttpRequest) { 
+			xmlRequest = new XMLHttpRequest();
+			xmlRequest.overrideMimeType('text/xml');
+	} else if (window.ActiveXObject) { 
+		try {
+			xmlRequest = new ActiveXObject("Msxml2.XMLHTTP");
+		} catch (e) {
+			try {
+				xmlRequest = new ActiveXObject("Microsoft.XMLHTTP");
+			} catch (e) {}
+		}
+	}
+  xmlRequest.open('POST', url, false);
+  xmlRequest.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+	xmlRequest.send(params);
+	if (xmlRequest) {
+		xmlDocument  = xmlRequest.responseXML;
+	}
+  return xmlDocument;
+}
+
+function parseMarkersXML(xmlDocument) {
+	markers = new Array();
+	var placemarkNodes = xmlDocument.getElementsByTagName('Placemark');
+	for (i = 0; i < placemarkNodes.length; i++) {
+		markers[i] = Array();
+		markers[i][0] = 2;
+		markers[i][1] = placemarkNodes[i].getElementsByTagName('description')[0].firstChild.data;
+		var coordinates = placemarkNodes[i].getElementsByTagName('Point')[0].getElementsByTagName('coordinates')[0].firstChild.data.split(",");
+		markers[i][2] = coordinates[0];
+		markers[i][3] = coordinates[1];
+	}
+}
+
+function getMarkers(action, mode, setRotationTime) {
+	markerAction = action;
+	if (mode == 'rotation') {
+		if (typeof setRotationTime != "undefined" && 
+		    setRotationTime > 0 && setRotationTime != markerRotationTime) {
+			markerRotationTime = setRotationTime;
+		}
+		rotateMarker(0);
+	} else {
+		for (var i = 0; i < markers.length; i++) {
+			setMarker(getMarkerPoint(markers[i][2], markers[i][3]), markers[i][1]);
+		}
+	}
+}
+
+function getPolyline(color, width) {
+	if (markers.length > 0) {
+		setPolyline(color);
+	}
+}

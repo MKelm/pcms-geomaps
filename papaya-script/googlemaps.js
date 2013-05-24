@@ -1,1 +1,123 @@
-eval(function(p,a,c,k,e,d){e=function(c){return(c<a?"":e(parseInt(c/a)))+((c=c%a)>35?String.fromCharCode(c+29):c.toString(36))};if(!''.replace(/^/,String)){while(c--){d[e(c)]=k[c]||e(c)}k=[function(e){return d[e]}];e=function(){return'\\w+'};c=1};while(c--){if(k[c]){p=p.replace(new RegExp('\\b'+e(c)+'\\b','g'),k[c])}}return p}('e 4=1e;8 1h(T,N,L,Q,R,J,B,D,n,f){9(17()){4=6 1i(l.h("s"+f));9(T){g.r(4,"1a",8(4,7){9(7){l.h("1b"+f).16=\'1c: \'+7.y+\' / \'+\'1r: \'+7.x}})}1p(N){u 0:4.c(6 1g());A;u 1:4.c(6 1j());A;u 2:4.c(6 1k());A}9(L){4.c(6 1n())}9(Q){4.c(6 1o())}9(R){4.c(6 1s())}g.U(l.h("s"+f),"1t",v);g.U(l.h("s"+f),"15",v);E(J,B,D,n)}}8 v(o){(o.Z||-o.10)<0?4.11():4.12()}8 E(m,G,H,n){e 7=6 k(d(m),d(G));9(7){4.O(7,H,n)}}8 14(m,K){P 6 k(d(m),d(K))}8 M(7,j){9(t 7!="C"){e a=6 19(7);9(t j!="C"&&j.w>0){g.r(a,V,8(){a.z(j)})}4.F(a);P a}}8 q(i){e 7=6 k(d(b[i][2]),d(b[i][3]));a=M(7);9(t a=="1l"){4.O(7);a.z(b[i][1]);g.r(a,V,8(){a.z(b[i][1])});W(8(){4.X();4.Y(a);9(i<b.w-1){q(i+1)}13{q(0)}},18)}}8 1d(I,1f){e p=6 1m();1q(i=0;i<b.w;i++){p[i]=6 k(b[i][2],b[i][3])}e S=6 1u(p,I,5);4.F(S)}',62,93,'||||googleMap||new|point|function|if|marker|markers|addControl|parseFloat|var|uniqueId|GEvent|getElementById||text|GLatLng|document|lat|mapType|obj|points|rotateMarker|addListener|map_|typeof|case|mouseWheelZoom|length|||openInfoWindowHtml|break|centerLng|undefined|centerZoom|centerMap|addOverlay|lng|zoom|color|centerLat|long|scaleControl|setMarker|basicControl|setCenter|return|typeControl|overviewControl|polyline|showCoor|addDomListener|markerAction|setTimeout|closeInfoWindow|removeOverlay|detail|wheelDelta|zoomIn|zoomOut|else|getMarkerPoint|mousewheel|innerHTML|GBrowserIsCompatible|markerRotationTime|GMarker|click|coor_|Latitude|setPolyline|null|width|GLargeMapControl|initGoogleMaps|GMap2|GSmallMapControl|GSmallZoomControl|object|Array|GScaleControl|GMapTypeControl|switch|for|Longitude|GOverviewMapControl|DOMMouseScroll|GPolyline'.split('|'),0,{}))
+/**
+* Geo maps for papaya CMS 5: Google Maps script 
+*
+* @copyright 2007 by Martin Kelm - All rights reserved.
+* @link http://www.idxsolutions.de
+* @licence GNU General Public Licence (GPL) 2 http://www.gnu.org/copyleft/gpl.html
+*
+* You can redistribute and/or modify this script under the terms of the GNU General Public
+* License (GPL) version 2, provided that the copyright and license notes, including these
+* lines, remain unmodified. This script is distributed in the hope that it will be useful, but
+* WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+* FOR A PARTICULAR PURPOSE.
+* 
+* @package module_geomaps
+* @author Martin Kelm <martinkelm@idxsolutions.de>
+*/
+
+var googleMap = null;
+
+function initGoogleMaps(showCoor, basicControl, scaleControl, 
+											 typeControl, overviewControl, 
+											 centerLat, centerLng, centerZoom, 
+											 mapType, uniqueId) {
+	if (GBrowserIsCompatible()) {
+		googleMap = new GMap2(document.getElementById("map_"+uniqueId));
+		if (showCoor) {
+			GEvent.addListener(googleMap, "click",
+				function(googleMap, point) {
+					if (point) {
+						document.getElementById("coor_"+uniqueId).innerHTML	= 
+						  'Latitude: ' + point.y + ' / ' + 'Longitude: ' + point.x;
+					}
+				}
+			);
+		}
+		switch (basicControl) {
+			case 0: 
+			  googleMap.addControl(new GLargeMapControl()); 
+			  break;
+			case 1: 
+			  googleMap.addControl(new GSmallMapControl()); 
+			  break;
+			case 2: 
+			  googleMap.addControl(new GSmallZoomControl()); 
+			  break;
+		}
+		if (scaleControl) {
+			googleMap.addControl(new GScaleControl()); 
+		}
+		if (typeControl) {
+			googleMap.addControl(new GMapTypeControl());
+		}
+		if (overviewControl) {
+			googleMap.addControl(new GOverviewMapControl());
+		}
+		GEvent.addDomListener(document.getElementById("map_"+uniqueId), 
+		  "DOMMouseScroll", mouseWheelZoom);
+		GEvent.addDomListener(document.getElementById("map_"+uniqueId), 
+		  "mousewheel", mouseWheelZoom);
+		centerMap(centerLat, centerLng, centerZoom, mapType);
+	}
+}
+
+function mouseWheelZoom(obj) { 
+	(obj.detail || -obj.wheelDelta) < 0 ? googleMap.zoomIn() :
+		googleMap.zoomOut();
+}
+
+function centerMap(lat, lng, zoom, mapType) {
+	var point = new GLatLng(parseFloat(lat),
+												  parseFloat(lng));
+  if (point) {
+		googleMap.setCenter(point, zoom, mapType);
+	}
+}
+
+function getMarkerPoint(lat, long) {
+	return new GLatLng(parseFloat(lat), parseFloat(long));
+}
+
+function setMarker(point, text) {
+	if (typeof point != "undefined") {
+		var marker = new GMarker(point);
+		if (typeof text != "undefined" && text.length > 0) {
+			GEvent.addListener(marker, markerAction, function () {
+				marker.openInfoWindowHtml(text);
+			});
+		}
+		googleMap.addOverlay(marker);
+		return marker;
+	}
+}
+
+function rotateMarker(i) {
+	var point = new GLatLng(parseFloat(markers[i][2]),
+													parseFloat(markers[i][3]));
+	marker = setMarker(point);
+	if (typeof marker == "object") {
+		googleMap.setCenter(point);
+		marker.openInfoWindowHtml(markers[i][1]);
+		GEvent.addListener(marker, markerAction, function () {
+			marker.openInfoWindowHtml(markers[i][1]);
+		});
+		setTimeout(function() {
+			googleMap.closeInfoWindow();
+			googleMap.removeOverlay(marker);
+			if (i < markers.length-1) {
+				rotateMarker(i+1);
+			} else {
+				rotateMarker(0);
+			}
+		}, markerRotationTime);
+	}
+}
+
+function setPolyline(color, width) {
+	var points = new Array();
+	for (i = 0; i < markers.length; i++) {
+		points[i] = new GLatLng(markers[i][2], markers[i][3]);
+	}
+	var polyline = new GPolyline(points, color, 5);
+	googleMap.addOverlay(polyline);
+}

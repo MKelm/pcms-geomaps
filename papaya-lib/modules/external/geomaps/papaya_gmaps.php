@@ -2,6 +2,16 @@
 /**
 * Backend for geo maps
 *
+* @copyright 2007 by Martin Kelm - All rights reserved.
+* @link http://www.idxsolutions.de
+* @licence GNU General Public Licence (GPL) 2 http://www.gnu.org/copyleft/gpl.html
+*
+* You can redistribute and/or modify this script under the terms of the GNU General Public
+* License (GPL) version 2, provided that the copyright and license notes, including these
+* lines, remain unmodified. This script is distributed in the hope that it will be useful, but
+* WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+* FOR A PARTICULAR PURPOSE.
+* 
 * @package module_geomaps
 * @author Martin Kelm <martinkelm@idxsolutions.de>
 */
@@ -376,10 +386,6 @@ class papaya_gmaps extends base_gmaps {
 			} elseif ($this->markersCount == 0) {
 				$this->addMsg(MSG_INFO, 'No markers added yet.');
 			}
-			
-			include_once(PAPAYA_INCLUDE_PATH.'system/base_switch_richtext.php');
-			$this->switchRichtext = &base_switch_richtext::getInstance($this);
-			$this->layout->addLeft($this->switchRichtext->getSwitchRichtextDialog());
 		}	
   }
   
@@ -391,10 +397,10 @@ class papaya_gmaps extends base_gmaps {
     if ($this->module->hasPerm(4, FALSE)) {
     	$menubar->addButton('Markers', 
 				$this->getLink(array('mode' => 0)),
-				11, '', $this->params['mode'] == 0);
+				'categories-content-tags', '', $this->params['mode'] == 0);
 		  $menubar->addButton('Keys', 
 				$this->getLink(array('mode' => 1)),
-				25, '', $this->params['mode'] == 1);
+				'categories-edit-access', '', $this->params['mode'] == 1);
     	$menubar->addSeperator();
     }
     
@@ -403,13 +409,13 @@ class papaya_gmaps extends base_gmaps {
       if ($this->module->hasPerm(4, FALSE)) {
 				$menubar->addButton('Add key', 
 					$this->getLink(array('cmd' => 'add_key')),
-					37, '', $this->params['cmd'] == 'add_key');
+					'actions-permission-add', '', $this->params['cmd'] == 'add_key');
 				if ($this->params['key_id'] > 0 && 
 				    @$this->params['cmd'] == 'edit_key') {
 					$menubar->addButton('Delete key', 
 						$this->getLink(array('cmd' => 'del_key', 
 						'key_id' => $this->params['key_id'])),
-						'keyminus.gif', '', $this->params['cmd'] == 'del_key');
+						'actions-permission-delete', '', $this->params['cmd'] == 'del_key');
 				}
 			}
       break;
@@ -417,16 +423,16 @@ class papaya_gmaps extends base_gmaps {
     	if ($this->module->hasPerm(2, FALSE)) {
 				$menubar->addButton('Add folder', 
 					$this->getLink(array('cmd' => 'add_folder')),
-					59, '', $this->params['cmd'] == 'add_folder');
+					'actions-folder-add', '', $this->params['cmd'] == 'add_folder');
 				if ($this->params['folder_id'] > 0) {
 					$menubar->addButton('Edit folder', 
 						$this->getLink(array('cmd' => 'edit_folder', 
 						'folder_id' => $this->params['folder_id'])),
-						67, '', $this->params['cmd'] == 'edit_folder');
+						'actions-edit', '', $this->params['cmd'] == 'edit_folder');
 					$menubar->addButton('Delete folder', 
 						$this->getLink(array('cmd' => 'del_folder', 
 						'folder_id' => $this->params['folder_id'])),
-						56, '', $this->params['cmd'] == 'del_folder');
+						'actions-folder-delete', '', $this->params['cmd'] == 'del_folder');
 				}
 				
 				$toolbar = &new base_btnbuilder;
@@ -434,38 +440,38 @@ class papaya_gmaps extends base_gmaps {
         
 				$toolbar->addButton('Add marker', 
 					$this->getLink(array('cmd' => 'add_marker')),
-					'pinplus.gif', '', $this->params['cmd'] == 'add_marker');
+					'actions-tag-add', '', $this->params['cmd'] == 'add_marker');
 			  if ($this->params['marker_id'] > 0 &&
 			      @$this->params['cmd'] == 'edit_marker') {
 					$toolbar->addButton('Delete marker', 
 						$this->getLink(array('cmd' => 'del_marker', 
 						'marker_id' => $this->params['marker_id'])),
-						'pinminus.gif', '', $this->params['cmd'] == 'del_marker');
+						'actions-tag-delete', '', $this->params['cmd'] == 'del_marker');
 				}
 			  
 			}
 			
       $toolbar->addSeperator();
 			$toolbar->addButton('Sort markers ascending', 
-				$this->getLink(array('cmd' => 'sort_markers_asc')), 147);
+			  $this->getLink(array('cmd' => 'sort_markers_asc')), 'actions/sort-asc.png');
 			$toolbar->addButton('Sort markers descending', 
-				$this->getLink(array('cmd' => 'sort_markers_desc')), 148);
+			  $this->getLink(array('cmd' => 'sort_markers_desc')), 'actions/sort-desc.png');
 			
 			if ($this->module->hasPerm(3, FALSE) && count($this->markers) > 0) {
-				$toolbar->addSeperator();
-				$toolbar->addButton('Export markers', 
-					$this->getLink(array('cmd' => 'export_markers')), 96);
+			  $toolbar->addSeperator();
+			  $toolbar->addButton('Export markers', 
+				$this->getLink(array('cmd' => 'export_markers')), 'actions/save.png');
 			}
 			
 			if ($str = $toolbar->getXML()) {
-				$this->layout->add(sprintf('<toolbar>%s</toolbar>'.LF,
-					$str));
+			  $this->layout->add(sprintf('<toolbar>%s</toolbar>'.LF,
+				$str));
 			}			
     }
     
 		if ($str = $menubar->getXML()) {
-			$this->layout->addMenu(sprintf('<menu>%s</menu>'.LF,
-				$str));
+		  $this->layout->addMenu(sprintf('<menu>%s</menu>'.LF,
+			$str));
 		}
   }
   
@@ -892,7 +898,7 @@ class papaya_gmaps extends base_gmaps {
     	$selected = ' selected="selected"';
     } 
     $result .= sprintf('<listitem image="%s" title="%s" href="%s"%s/>'.LF, 
-		  $this->images[55], $this->_gt('Base'),  
+		  $this->images['items-desktop'], $this->_gt('Base'),  
 		    $this->getLink(array('folder_id' => 0)), $selected);
 		  
 		if (isset($this->folders) && is_array($this->folders) && 
@@ -901,10 +907,10 @@ class papaya_gmaps extends base_gmaps {
 				$selected = '';
 				if (isset($this->params['folder_id']) && 
 				    $this->params['folder_id'] == $folderId) {
-					$folderImage = 57;
+					$folderImage = 'status-folder-open';
 					$selected = ' selected="selected"';
 				} else {
-					$folderImage = 56;
+					$folderImage = 'items-folder';
 				}
 				$result .= sprintf('<listitem image="%s" title="%s" indent="1" href="%s"%s/>'.LF, 
 		  		$this->images[$folderImage], 
@@ -934,19 +940,19 @@ class papaya_gmaps extends base_gmaps {
 			$apiTitle = ($key['key_type'] == 0) ? 'Google Maps API' :
         'Yahoo Maps API';
 			$result .= sprintf('<listitem image="%s" href="%s" title="%s">'.LF, 
-				$this->images[26], $editLink,
+				$this->images['items-permission'], $editLink,
 				papaya_strings::escapeHTMLChars($apiTitle));
 
 			$result .= sprintf('<subitem>%s</subitem>'.LF,
 				papaya_strings::escapeHTMLChars($key['key_host'])); 
 			$result .= sprintf('<subitem align="center"><a href="%s">'.
 				'<glyph src="%s" /></a></subitem>'.LF,
-				$editLink, $this->images[14]);
+				$editLink, $this->images['actions-edit']);
 			$delLink = $this->getLink(array('cmd' => 'del_key', 
 				'key_id' => $keyId));
 			$result .= sprintf('<subitem align="center"><a href="%s">'.
 				'<glyph src="%s" /></a></subitem>'.LF,
-				$delLink, $this->images[10]);
+				$delLink, $this->images['actions-permission-delete']);
 					
       $result .= '</listitem>'.LF;
     }
@@ -956,7 +962,7 @@ class papaya_gmaps extends base_gmaps {
     $this->layout->add($result);
   }
   
-	function getMarkersList() {		
+  function getMarkersList() {		
     $result .= sprintf('<listview width="100%%" title="%s">'.LF, 
       $this->_gt('Markers'));
     $result .= sprintf('<cols><col align="left">%s</col>'.
@@ -978,11 +984,11 @@ class papaya_gmaps extends base_gmaps {
     		$editLink = $this->getLink(array('cmd' => 'edit_marker', 
 					'marker_id' => $markerId));
 			  $result .= sprintf('<listitem image="%s" href="%s" title="%s">'.LF, 
-				  $this->images[163], $editLink,
+				  $this->images['items-tag'], $editLink,
 				  papaya_strings::escapeHTMLChars($marker['marker_title']));
     	} else {
     		$result .= sprintf('<listitem image="%s" title="%s">'.LF, 
-				  $this->images[163], 
+				  $this->images['items-tag'], 
 				  papaya_strings::escapeHTMLChars($marker['marker_title']));
     	}
 
@@ -993,18 +999,18 @@ class papaya_gmaps extends base_gmaps {
       if ($this->module->hasPerm(2, FALSE)) {
 				$result .= sprintf('<subitem align="center"><a href="%s">'.
 					'<glyph src="%s" /></a></subitem>'.LF,
-					$editLink, $this->images[14]);
+					$editLink, $this->images['actions-edit']);
 				$delLink = $this->getLink(array('cmd' => 'del_marker', 
 					'marker_id' => $markerId));
 				$result .= sprintf('<subitem align="center"><a href="%s">'.
 					'<glyph src="%s" /></a></subitem>'.LF,
-					$delLink, $this->images[10]);
+					$delLink, $this->images['actions-tag-delete']);
 				if ($count > 1) {
 			  	$pushUpLink = $this->getLink(array('cmd' => 'set_up_marker', 
 						'marker_id' => $markerId));
 					$result .= sprintf('<subitem align="center"><a href="%s">'.
 						'<glyph src="%s" /></a></subitem>'.LF,
-						$pushUpLink, $this->images[6]);
+						$pushUpLink, $this->images['actions-go-up']);
 			  } else {
 			  	$result .= '<subitem />';
 			  }
@@ -1013,7 +1019,7 @@ class papaya_gmaps extends base_gmaps {
 						'marker_id' => $markerId));
 					$result .= sprintf('<subitem align="center"><a href="%s">'.
 						'<glyph src="%s" /></a></subitem>'.LF,
-						$pushDownLink, $this->images[7]);
+						$pushDownLink, $this->images['actions-go-down']);
 			  } else {
 			  	$result .= '<subitem />';
 			  }

@@ -41,6 +41,10 @@ GNU General Public Licence (GPL): gpl.txt
 
 *Changelog*
 
+_Rev. 0.14 (2007-07-11)_
+- Changed icons to new backend icons
+- Added new custom icons based on tango icons
+
 _Rev. 0.13 (2007-06-27)_
 - added polyline output mode for content box modules
 - added polyline functions to java scripts
