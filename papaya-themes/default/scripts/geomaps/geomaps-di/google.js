@@ -44,7 +44,7 @@ function initGoogleMaps(showCoor, basicControl, scaleControl,
     if (typeof window.googleMaps == "undefined") {
       window.googleMaps = [];
     }
-    
+
     if (typeof mapElement != "undefined") {
 
       /*
@@ -55,7 +55,7 @@ function initGoogleMaps(showCoor, basicControl, scaleControl,
        */
       googleMaps[uniqueId] = new GMap2(mapElement, {'size' : new GSize(width, height)});
       var googleMap = googleMaps[uniqueId];
-      
+
       if (showCoor === 1) {
         GEvent.addListener(googleMap, "click",
           function(googleMap, point) {
@@ -144,7 +144,7 @@ function getMarkerObject(uniqueId, point, markerIdx,
       parseFloat(geoMarkers[uniqueId][markerIdx][3])
     );
   }
-  
+
   if (point) {
     // set marker with or without icon image
     if (geoMarkers[uniqueId][markerIdx][4] &&
@@ -167,9 +167,9 @@ function getMarkerObject(uniqueId, point, markerIdx,
         new_icon.infoWindowAnchor = new GPoint(iw/2,ih/2);
         geoMapsIcons[customIconImage] = new_icon;
       }
-      var marker = new GMarker( point, 
-        { icon:geoMapsIcons[customIconImage], 
-          zIndexProcess:markerZIndexProcessEvent } 
+      var marker = new GMarker( point,
+        { icon:geoMapsIcons[customIconImage],
+          zIndexProcess:markerZIndexProcessEvent }
       );
     } else {
       var marker = new GMarker(

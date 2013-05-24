@@ -1,8 +1,8 @@
 <?php
 /**
- * Geo maps box for Google Maps
+ * Geo maps box for Open Layers
  *
- * @copyright 2007-2009 by Martin Kelm - All rights reserved.
+ * @copyright 2007-2010 by Martin Kelm - All rights reserved.
  * @link http://www.idxsolutions.de
  * @licence GNU General Public Licence (GPL) 2 http://www.gnu.org/copyleft/gpl.html
  *
@@ -14,7 +14,6 @@
  *
  * @package module_geomaps
  * @author Martin Kelm <martinkelm@idxsolutions.de>
- * @author Bastian Feder <info@papaya-cms.com> <extensions>
  */
 
 /**
@@ -23,21 +22,20 @@
 require_once(PAPAYA_INCLUDE_PATH.'system/base_actionbox.php');
 
 /**
- * Geo maps box for Google Maps
+ * Geo maps box for Open Layers
  *
  * @package module_geomaps
  * @author Martin Kelm <martinkelm@idxsolutions.de>
- * @author Bastian Feder <info@papaya-cms.com> <extensions>
  */
-class actionbox_geomaps_google extends base_actionbox {
+class actionbox_geomaps_ol extends base_actionbox {
 
   /**
    * List of fields to be configurable in the admin backend
    * @public array $editFields
    */
   var $editFields = array(
-    'base_coor_mode' => array('Coordinates Mode', 'isNum', TRUE, 'yesno',
-       NULL, 'Shows latitude and longitude information on click.', 0),
+    /*'base_coor_mode' => array('Coordinates Mode', 'isNum', TRUE, 'yesno',
+       NULL, 'Shows latitude and longitude information on click.', 0), */
     'base_links_target' => array('Links Target', 'isAlphaNumChar', TRUE, 'combo',
       array('_self' => 'Default', '_blank' => 'New window'), NULL, '_self'),
     'base_no_script_text' => array('No Script Text', 'isSomeText', FALSE,
@@ -46,37 +44,22 @@ class actionbox_geomaps_google extends base_actionbox {
     'Settings',
     'stg_type' => array('Type', 'isAlphaNum', TRUE, 'combo',
       array(
-        'G_NORMAL_MAP' => 'Normal',
-        'G_SATELLITE_MAP' => 'Satellite',
-        'G_HYBRID_MAP' => 'Hybrid',
-        'G_PHYSICAL_MAP' => 'Physical',
-        'G_MOON_VISIBLE_MAP' => 'Moon',
-        'G_MOON_ELEVATION_MAP' => 'Moon (elevation)',
-        'G_MARS_VISIBLE_MAP' => 'Mars',
-        'G_MARS_ELEVATION_MAP' => 'Mars (elevation)',
-        'G_SKY_VISIBLE_MAP' => 'Sky'
-      ), NULL, 'G_NORMAL_MAP'
+        'OSM' => 'Open Street Map',
+      ), NULL, 'OSM'
     ),
     'stg_width' => array('Width', 'isNum', TRUE, 'input', 50, NULL, 320),
     'stg_height' => array('Heigth', 'isNum', TRUE, 'input', 50, NULL, 240),
     'stg_zoom' => array('Zoom', 'isNum', TRUE, 'input', 2,
-      'Use a value from 1 to 18.', 9),
+      'Use a value from 1 to 18.', 6),
 
-    'Controls',
-    'stg_ctrl_basic' => array('Navigation And Zoom', 'isNum', TRUE, 'combo',
-       array(
-         0 => 'Navigation control and zoom bar',
-         1 => 'Navigation control and zoom buttons',
-         2 => 'Zoom buttons'
-       ), NULL, 0
-     ),
+    /*'Controls',
     'stg_ctrl_type' => array('Map Type', 'isAlpha', TRUE, 'combo',
       array('true' => 'Yes', 'false' => 'No'),
       'Set a default map type in settings.', 'true'),
-    'stg_ctrl_overview' => array('Overview map', 'isAlpha', TRUE, 'combo',
+    'stg_ctrl_pan' => array('Pan', 'isAlpha', TRUE, 'combo',
       array('true' => 'Yes', 'false' => 'No'), NULL, 'true'),
-    'stg_ctrl_scale' => array('Scale information', 'isAlpha', TRUE, 'combo',
-      array('true' => 'Yes', 'false' => 'No'), NULL, 'true'),
+    'stg_ctrl_zoom' => array('Zoom', 'isNum', TRUE, 'combo',
+      array(0 => 'No',  1 => 'Small', 2 => 'Long'), NULL, 2),*/
 
     'Center',
     'stg_center_mode' => array('Mode', 'isAlpha', TRUE, 'combo',
@@ -84,7 +67,7 @@ class actionbox_geomaps_google extends base_actionbox {
         'default' => 'Use settings',
         'first_marker' => 'Use first marker',
         'all_markers' => 'Use markers\' center'
-      ), 'Use markers\' center: Check zoom level or activate zoom into focus!',
+      ), 'Use markers\' center: Check zoom level to get all markers into focus!',
       'default'
     ),
     'stg_center_lat' => array('Latitude', '/[\+\-]?\d+(\.\d+)?/', TRUE, 'input',
@@ -107,11 +90,9 @@ class actionbox_geomaps_google extends base_actionbox {
     'Markers',
     'mrk_active' => array('Active', 'isNum', TRUE, 'yesno',
       NULL, 'Needs a valid KML data, see above.', 0),
-    'mrk_clusterer' => array('Clusterer', 'isNum', TRUE, 'yesno',
-      NULL, NULL, 0),
-    'mrk_zoom_into_focus' => array('Zoom Into Focus', 'isNum', TRUE, 'yesno',
-      NULL, NULL, 0),
-    'mrk_show_description' => array('Show Description', 'isNum', TRUE, 'yesno',
+    /*'mrk_zoom_into_focus' => array('Zoom Into Focus', 'isNum', TRUE, 'yesno',
+      NULL, NULL, 0),*/
+    /*'mrk_show_description' => array('Show Description', 'isNum', TRUE, 'yesno',
       NULL, NULL, 0),
     'mrk_mouse_desc_action' => array('Description Action', 'isAlpha',
       TRUE, 'combo', array(
@@ -119,18 +100,18 @@ class actionbox_geomaps_google extends base_actionbox {
         'mouseover' => 'Open by mouse over'
       ),
       'How do you wanna to open descriptions?', 'click'
-    ),
+    ),*/
     'mrk_mode' => array('Mode', 'isAlpha', TRUE, 'combo',
       array(
         'hide' => 'Hide',
         'static' => 'Default',
-        'rotation' => 'Rotation'
+        //'rotation' => 'Rotation'
       ), 'Note: The rotation mode opens descriptions automatically.', 'hide'
     ),
-    'mrk_rotation' => array('Rotation Interval', 'isNum', TRUE, 'input',
-      5, 'In seconds, for rotation mode', 5000),
+    /*'mrk_rotation' => array('Rotation Interval', 'isNum', TRUE, 'input',
+      5, 'In seconds, for rotation mode', 5000),*/
 
-    'Polyline',
+    /*'Polyline',
     'mrk_polyline_active' => array('Active', 'isNum', TRUE, 'yesno',
        NULL, 'Needs at least two markers!', 0),
     'mrk_polyline_color' => array('Color', 'isNoHTML', TRUE, 'function',
@@ -147,16 +128,13 @@ class actionbox_geomaps_google extends base_actionbox {
     'stc_active' => array('Active', 'isNum', TRUE, 'yesno', NULL, NULL, 0),
     'stc_force' => array('Force', 'isNum', TRUE, 'yesno',
       NULL, 'Show static map image only.', 0),
-    'stc_type' => array('Type', 'isAlpha', TRUE, 'combo',
+    'stc_type' => array('Output type', 'isAlpha', TRUE, 'combo',
       array(
-        'roadmap' => 'Roadmap',
-        'mobile' => 'Mobile',
-        'satellite' => 'Satellite',
-        'terrain' => 'Terrain',
-        'hybrid' => 'Hybrid'
-      ), NULL, 'roadmap'
-    ),
-    'stc_markers_color' => array('Markers Color', 'isAlpha', TRUE, 'combo',
+        'png' => 'PNG',
+        'gif' => 'GIF'
+      ), NULL, 'png'
+    ),*/
+    /*'stc_markers_color' => array('Markers Color', 'isAlpha', TRUE, 'combo',
       array(
         'rotate' => 'rotate' ,
         'black' => 'black', 'brown' => 'brown', 'green' => 'green',
@@ -171,14 +149,14 @@ class actionbox_geomaps_google extends base_actionbox {
         'mid' => 'mid',
         'small' => 'small',
         'tiny' => 'tiny'
-      ), 'Select "mid" to activate markers decoration.', 'default'
+      ), 'Select "mid" to activate custom decoration.', 'default'
     ),
     'stc_markers_decoration' => array('Markers Decoration', 'isNoHTML',
       FALSE, 'input', 1,
-      'Set the decoration of the marker (works with lowercase chars only).'
+      'Set the decoration of the marker (only lowercase allowed).'
     ),
     'stc_alternative_text' => array('Alternative Text', 'isSomeText', FALSE,
-      'input', 200, NULL, '')
+      'input', 200, NULL, '')*/
   );
 
   /**
@@ -267,8 +245,8 @@ class actionbox_geomaps_google extends base_actionbox {
 
       // set base data
       $baseData = $this->outputObj->setBaseData(
-        0, // google api
-        $this->data['base_coor_mode'],
+        2, // open layers api
+        0, //$this->data['base_coor_mode'],
         $this->data['base_no_script_text'],
         $this->data['base_links_target']
       );
@@ -279,13 +257,12 @@ class actionbox_geomaps_google extends base_actionbox {
         $this->data['stg_width'],
         $this->data['stg_height'],
         array(
-          'basic' => $this->data['stg_ctrl_basic'],
-          'type' => $this->data['stg_ctrl_type'],
-          'overview' => $this->data['stg_ctrl_overview'],
-          'scale' => $this->data['stg_ctrl_scale']
+          'type' => 1, //$this->data['stg_ctrl_type'],
+          'pan' => 1, //$this->data['stg_ctrl_pan'],
+          'zoom' => 1 //$this->data['stg_ctrl_zoom']
         ),
-        $this->data['stg_trippl_active'],
-        $this->data['stg_trippl_caption'],
+        0, // $this->data['stg_trippl_active'],
+        NULL, // $this->data['stg_trippl_caption'],
         $this->data['stg_zoom'],
         $this->data['stg_center_lat'],
         $this->data['stg_center_lng'],
@@ -302,15 +279,13 @@ class actionbox_geomaps_google extends base_actionbox {
           $this->data['mrk_folder_id'],
           'red', // TODO dynamic markers color
           $this->data['mrk_mode'],
-          $this->data['mrk_rotation'],
-          $this->data['mrk_show_description'],
-          $this->data['mrk_mouse_desc_action'],
-          $this->data['mrk_zoom_into_focus'],
-          $this->data['mrk_polyline_active'],
-          $this->data['mrk_polyline_color'],
-          $this->data['mrk_polyline_size'],
+          5, // $this->data['mrk_rotation'],
+          0, // $this->data['mrk_show_description'],
+          1, // $this->data['mrk_mouse_desc_action'],
           NULL,
-          $this->data['mrk_clusterer']
+          0, // $this->data['mrk_polyline_active'],
+          'none', // $this->data['mrk_polyline_color'],
+          5 //$this->data['mrk_polyline_size']
         );
       } else {
         $markersData = TRUE;
@@ -318,17 +293,16 @@ class actionbox_geomaps_google extends base_actionbox {
 
       // set static data
       if ($this->data['stc_active'] == 1) {
-        $staticData = $this->outputObj->setStaticData(
+        /*$staticData = $this->outputObj->setStaticData(
           $this->data['stc_force'],
           $this->data['stc_type'],
           $this->data['stc_alternative_text'],
           $this->data['stc_markers_color'],
           $this->data['stc_markers_size'],
           $this->data['stc_markers_decoration']
-        );
-      } else {
-        $staticData = TRUE;
+        ); */
       }
+      $staticData = TRUE;
 
       if ($baseData && $optionsData && $markersData && $staticData) {
         // get xmls

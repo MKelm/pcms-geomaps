@@ -113,18 +113,19 @@ class output_geomaps extends base_geomaps {
   function setBaseData($apiType, $coorMode, $noScriptText, $linksTarget) {
 
     $apiKey = $this->getDistinctKey($_SERVER['HTTP_HOST'], $apiType, TRUE);
-    if (!empty($apiKey['key_value'])
-        && isset($this->apiTypeNames[$apiType])) {
+    if ((!empty($apiKey['key_value']) || $apiType == 2) &&
+        isset($this->apiTypeNames[$apiType])) {
 
       $this->data['base'] = array(
         'id' => md5($this->paramName.microtime()), // string id
         'api' => array(
-          'key' => $apiKey['key_value'], // string key
+          'key' => (!empty($apiKey['key_value'])) ?
+            $apiKey['key_value'] : '', // string key
           'type' => $this->apiTypeNames[$apiType], // string type name
         ),
         'coor_mode' => $coorMode, // int yes/no
-        'scripts_path' => $this->getOption('scripts_path',
-                            '/papaya-script/geomaps/'), // string
+        'scripts_path' =>
+          $this->getOption('scripts_path', '/papaya-script/geomaps/'), // string
         'no_script_text' => $noScriptText, // string text
         'links_target' => $linksTarget // string
       );
@@ -253,7 +254,7 @@ class output_geomaps extends base_geomaps {
                           $polylineActive, $polylineColor, $polylineSize,
                           $ressourceParams = NULL, $clusterer = 0) {
 
-    if ($pageId > 0 && !empty($viewMode) && !empty($mouseDescAction)) {
+    if (!empty($mouseDescAction)) {
 
       $this->data['markers'] = array(
         'ressource_type' => $ressourceType,
@@ -266,8 +267,8 @@ class output_geomaps extends base_geomaps {
         'zoom_into_focus' => $zoomIntoFocus, // int yes/no
         'color' => $color, // string color
         'data_page' => array(
-          'page_id' => $pageId, // int id
-          'view_mode' => $viewMode // string mode
+          'page_id' => $pageId, // int id, optional to load from external page
+          'view_mode' => $viewMode // string mode, optional to use specific mode
         ),
         'polyline' => array(
           'active' => $polylineActive, // int yes/no
@@ -277,9 +278,9 @@ class output_geomaps extends base_geomaps {
         'clusterer' => $clusterer,
         'loaded_markers' => FALSE
       );
-      
-      // get onload markers if needed
-      if ($mode != 'hide' && 
+
+      // get onload markers if no external page has been set
+      if ($pageId == 0 && $mode != 'hide' &&
           $ressourceType == 'folder' && $ressourceId > 0) {
         if ($this->loadMarkers($ressourceId) === TRUE) {
           $this->data['markers']['loaded_markers'] = TRUE;
@@ -302,9 +303,9 @@ class output_geomaps extends base_geomaps {
    */
   function setStaticData($force, $type, $alternativeText,
                          $markersColor, $markersSize, $markersDecoration) {
-                           
+
     if (!empty($type)) {
-      
+
       $this->data['static'] = array(
         'force' => $force, // int yes/no
         'type' => $type, // string static map type
@@ -381,6 +382,14 @@ class output_geomaps extends base_geomaps {
           $this->data['settings']['controls']['zoom']
         );
         break;
+      case $this->apiTypeNames[2]: // yahoo
+        $controlsXml = sprintf(
+          '<controls type="%s" pan="%s" zoom="%s" />'.LF,
+          $this->data['settings']['controls']['type'],
+          $this->data['settings']['controls']['pan'],
+          $this->data['settings']['controls']['zoom']
+        );
+        break;
       }
 
       if (isset($controlsXml)) {
@@ -403,14 +412,14 @@ class output_geomaps extends base_geomaps {
 
     return $xml;
   }
-  
+
   function getMarkersBaseXML() {
     $xml = '';
     $mt = microtime();
     if (is_array($this->markers) && $this->markersCount > 0) {
       foreach ($this->markers as $marker) {
         $desc = papaya_strings::ensureUTF8($marker['marker_desc']);
-        
+
         // get marker icon image if available
         if (!empty($marker['marker_icon'])) {
           if (!isset($mediaDB)) {
@@ -428,25 +437,25 @@ class output_geomaps extends base_geomaps {
                 );
               }
             }
-            if (!empty($iconMediaFile) && 
-                (!empty($iconSize[0]) && !empty($iconSize[1]))) { 
+            if (!empty($iconMediaFile) &&
+                (!empty($iconSize[0]) && !empty($iconSize[1]))) {
               $loadedMarkerIcons[$marker['marker_icon']] = array(
                 $iconMediaFile, $iconSize[0], $iconSize[1]
               );
             }
           }
-          if (!empty($loadedMarkerIcons[$marker['marker_icon']])) {
-            $iconXML = sprintf(
-              '<icon src="%s" width="%d" height="%d" />'.LF,
-              $loadedMarkerIcons[$marker['marker_icon']][0],
-              $loadedMarkerIcons[$marker['marker_icon']][1],
-              $loadedMarkerIcons[$marker['marker_icon']][2]
-            );
-          } else {
-            $iconXML = '';
-          }
         }
-       
+        if (!empty($loadedMarkerIcons[$marker['marker_icon']])) {
+          $iconXML = sprintf(
+            '<icon src="%s" width="%d" height="%d" />'.LF,
+            $loadedMarkerIcons[$marker['marker_icon']][0],
+            $loadedMarkerIcons[$marker['marker_icon']][1],
+            $loadedMarkerIcons[$marker['marker_icon']][2]
+          );
+        } else {
+          $iconXML = '';
+        }
+
         $xml .= sprintf(
           '<marker title="%s" lat="%s" lng="%s">'.LF.
           '<description>%s</description>'.LF.
@@ -474,35 +483,45 @@ class output_geomaps extends base_geomaps {
         && !empty($this->data['markers'])) {
       $data = &$this->data['markers'];
 
-      // get markers params
-      $params = array(
-        'ressource_type' => $this->data['markers']['ressource_type'],
-        'ressource_id' => $this->data['markers']['ressource_id'],
-        'base_kml' => 1
-      );
-      if (is_array($this->data['markers']['ressource_params']) &&
-          count($this->data['markers']['ressource_params']) > 0) {
-        $params = array_merge($params, $this->data['markers']['ressource_params']);
+      if ($this->data['markers']['data_page']['page_id'] > 0) {
+        // get markers params
+        $params = array(
+          'ressource_type' => $this->data['markers']['ressource_type'],
+          'ressource_id' => $this->data['markers']['ressource_id'],
+          'base_kml' => 1
+        );
+        if (is_array($this->data['markers']['ressource_params']) &&
+            count($this->data['markers']['ressource_params']) > 0) {
+          $params = array_merge($params, $this->data['markers']['ressource_params']);
+        }
+        include_once(PAPAYA_INCLUDE_PATH.'system/Papaya/Request/Parameters.php');
+        $paramsObj = new PapayaRequestParameters();
+        $queryString = '?'.$paramsObj->encodeQueryString($this->paramName, $params);
+
+        // get data page url
+        $dataPageUrl = papaya_strings::escapeHTMLChars(
+          $this->getWebLink(
+            $this->data['markers']['data_page']['page_id'], NULL,
+            $this->data['markers']['data_page']['view_mode']
+          ).$queryString
+        );
+        $dataPageUrlXML = sprintf('<data-page url="%s" />'.LF, $dataPageUrl);
+      } else {
+        $dataPageUrlXML = '';
       }
 
-      // get data page url
-      $dataPageUrl = $this->getWebLink(
-        $this->data['markers']['data_page']['page_id'], NULL,
-        $this->data['markers']['data_page']['view_mode'],
-        $params, $this->paramName
-      );
-       
       // get markers base xml if available
       if ($this->data['markers']['loaded_markers'] === TRUE) {
         $markersBaseXML = $this->getMarkersBaseXML();
+      } else {
+        $markersBaseXML = '';
       }
 
       // set xml
       $xml = sprintf(
         '<markers mode="%s" rotation="%d" color="%s" zoom-into-focus="%d"'.
         ' show-description="%d" mouse-desc-action="%s" clusterer="%d">'.LF.
-        '<data-page url="%s" />'.LF.
-        '<polyline active="%d" color="%s" size="%d" />'.LF.
+        '%s<polyline active="%d" color="%s" size="%d" />'.LF.
         '%s</markers>'.LF,
         $this->data['markers']['mode'],
         $this->data['markers']['rotation'],
@@ -511,7 +530,7 @@ class output_geomaps extends base_geomaps {
         $this->data['markers']['show_description'],
         $this->data['markers']['mouse_desc_action'],
         $this->data['markers']['clusterer'],
-        papaya_strings::escapeHTMLChars($dataPageUrl),
+        $dataPageUrlXML,
         $this->data['markers']['polyline']['active'],
         $this->data['markers']['polyline']['color'],
         $this->data['markers']['polyline']['size'],
@@ -719,16 +738,42 @@ class output_geomaps extends base_geomaps {
 
     // depends on base / settings / markers data
     if (!empty($this->data['base']) && !empty($this->data['settings']) &&
-        !empty($this->data['markers'])) {
+        !empty($this->data['markers']) &&
+        isset($this->data['markers']['ressource_type']) &&
+        $this->data['markers']['ressource_type'] == 'folder' &&
+        isset($this->data['markers']['ressource_id'])) {
 
       // get first marker adress by folder
       $firstMarkerData = $this->getFirstMarkerData(
-        $this->data['markers']['folder_id']
+        $this->data['markers']['ressource_id']
       );
       if (!is_null($firstMarkerData)) {
-        $address = papaya_strings::escapeHTMLChars(
-          $firstMarkerData['marker_address']
+        $markerAddressFields = array(
+          array('marker_addr_street', 'marker_addr_house'),
+          array('marker_addr_zip', 'marker_addr_city'),
+          'marker_addr_country'
         );
+        $mergedAddressFields = '';
+        foreach ($markerAddressFields as $key => $fields) {
+          if ($mergedAddressFields !== '') {
+            $mergedAddressFields .= ', ';
+          }
+          if (!is_array($fields)) {
+            if (!empty($firstMarkerData[$fields])) {
+              $mergedAddressFields .= $firstMarkerData[$fields];
+            }
+          } elseif (count($fields) > 0) {
+            foreach ($fields as $field) {
+              if ($mergedAddressFields !== '') {
+                $mergedAddressFields .= ' ';
+              }
+              if (!empty($firstMarkerData[$field])) {
+                $mergedAddressFields .= $firstMarkerData[$field];
+              }
+            }
+          }
+        }
+        $address = papaya_strings::escapeHTMLChars($mergedAddressFields);
       }
 
       // get trip planner link by adding destination address to permalink

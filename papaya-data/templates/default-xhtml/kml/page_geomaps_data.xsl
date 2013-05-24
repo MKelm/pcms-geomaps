@@ -1,12 +1,10 @@
 <?xml version="1.0"?>
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
-
-  <!-- geo maps markers template -->
-
   <!--
-    NOTE: Use IE8 compatibility mode, to support coordinates click mode!
-    <xsl:comment> &lt;meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7"/&gt; </xsl:comment>
+    @papaya:modules content_geomaps_markers
   -->
+
+  <!-- geo maps kml data template -->
 
   <xsl:output method="xml" encoding="utf-8" standalone="no" indent="yes" omit-xml-declaration="no" />
 

@@ -80,8 +80,12 @@ class actionbox_geomaps_yahoo extends base_actionbox {
       50, NULL, 0),
 
     'Markers KML',
-    'mrk_page_id' => array('Page Id', 'isNum', FALSE, 'pageid',
-      10, 'Select a page which uses the markers data module.', 0),
+    'mrk_page_id' => array(
+      'Page Id', 'isNum', FALSE, 'pageid', 10,
+      'Set a page id greater than zero to use an extern page to load
+      markers\' data by using a xmlhttp request.',
+      0
+    ),
     'mrk_view_mode' => array('View Mode', 'isAlpha', TRUE, 'function',
       'callbackViewModesList', 'Select a KML view mode.'),
     'mrk_folder_id' => array('Folder', 'isNum', TRUE, 'function',
@@ -90,8 +94,6 @@ class actionbox_geomaps_yahoo extends base_actionbox {
     'Markers',
     'mrk_active' => array('Active', 'isNum', TRUE, 'yesno',
       NULL, 'Needs a valid KML data, see above.', 0),
-    /*'mrk_zoom_into_focus' => array('Zoom Into Focus', 'isNum', TRUE, 'yesno',
-      NULL, NULL, 0),*/
     'mrk_show_description' => array('Show Description', 'isNum', TRUE, 'yesno',
       NULL, NULL, 0),
     'mrk_mouse_desc_action' => array('Description Action', 'isAlpha',
@@ -134,27 +136,6 @@ class actionbox_geomaps_yahoo extends base_actionbox {
         'gif' => 'GIF'
       ), NULL, 'png'
     ),
-    /*'stc_markers_color' => array('Markers Color', 'isAlpha', TRUE, 'combo',
-      array(
-        'rotate' => 'rotate' ,
-        'black' => 'black', 'brown' => 'brown', 'green' => 'green',
-        'purple' => 'purple', 'yellow' => 'yellow', 'blue' => 'blue',
-        'gray' => 'gray', 'orange' => 'orange', 'red' => 'red',
-        'white' => 'white'
-       ), NULL, 'red'
-    ),
-    'stc_markers_size' => array('Markers Size', 'isAlpha', TRUE, 'combo',
-      array(
-        'default' => 'default',
-        'mid' => 'mid',
-        'small' => 'small',
-        'tiny' => 'tiny'
-      ), 'Select "mid" to activate custom decoration.', 'default'
-    ),
-    'stc_markers_decoration' => array('Markers Decoration', 'isNoHTML',
-      FALSE, 'input', 1,
-      'Set the decoration of the marker (only lowercase allowed).'
-    ),*/
     'stc_alternative_text' => array('Alternative Text', 'isSomeText', FALSE,
       'input', 200, NULL, '')
   );
@@ -282,7 +263,7 @@ class actionbox_geomaps_yahoo extends base_actionbox {
           $this->data['mrk_rotation'],
           $this->data['mrk_show_description'],
           $this->data['mrk_mouse_desc_action'],
-          $this->data['mrk_zoom_into_focus'],
+          NULL,
           $this->data['mrk_polyline_active'],
           $this->data['mrk_polyline_color'],
           $this->data['mrk_polyline_size']

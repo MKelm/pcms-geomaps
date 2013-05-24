@@ -29,7 +29,7 @@ function initYahooMaps(showCoor, zoomControl, panControl, typeControl,
       window.yahooMaps = [];
     }
     yahooMaps[uniqueId] = new YMap(mapElement);
-    
+
     if (showCoor === 1) {
       YEvent.Capture(yahooMaps[uniqueId], EventsList.MouseClick,
         function(e, point) {
@@ -104,10 +104,10 @@ function getMarkerObject(uniqueId, point, markerIdx,
         new_icon.src = customIconImage;
         var iw = customIconWidth;
         var ih = customIconHeight;
-        new_icon.size = new YSize(iw, ih); 
+        new_icon.size = new YSize(iw, ih);
         new_icon.offset = new YCoordPoint(
           -parseInt(iw/2), parseInt(ih/2)
-        );         
+        );
         geoMapsIcons[customIconImage] = new_icon;
       }
       var marker = new YMarker(point, geoMapsIcons[customIconImage]);
@@ -153,8 +153,10 @@ function removeMarkers(uniqueId) {
 
 function markerListenerEvent(uniqueId, markerIdx) { }
 
-function rotateMarker(uniqueId, i) {  
-  var point = YGeoPoint(geoMarkers[uniqueId][i][2], geoMarkers[uniqueId][i][3]);
+function rotateMarker(uniqueId, i) {
+  var point = new YGeoPoint(
+    geoMarkers[uniqueId][i][2], geoMarkers[uniqueId][i][3]
+  );
   if (typeof geoMarkerObjects[uniqueId][i] != "object") {
     geoMarkerObjects[uniqueId][i] = getMarkerObject(uniqueId, point, i);
   }
@@ -162,7 +164,7 @@ function rotateMarker(uniqueId, i) {
     yahooMaps[uniqueId].addOverlay(geoMarkerObjects[uniqueId][i]);
     yahooMaps[uniqueId].drawZoomAndCenter(point, yahooMaps[uniqueId].getZoomLevel());
     setTimeout(function() {
-      marker.closeSmartWindow();
+      geoMarkerObjects[uniqueId][i].closeSmartWindow();
       yahooMaps[uniqueId].removeOverlay(geoMarkerObjects[uniqueId][i]);
       if (i < geoMarkers[uniqueId].length-1) {
         rotateMarker(uniqueId, i+1);

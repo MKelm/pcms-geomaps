@@ -33,7 +33,7 @@ function initMarkers(uniqueId) {
 function addMarkers(uniqueId, url, params) {
   xmlDocument = getMarkersXML(url, params);
   if (xmlDocument) {
-    parseMarkersXML(xmlDocument, uniqueId);
+    parseMarkersXML(uniqueId, xmlDocument);
   }
 }
 
@@ -157,7 +157,7 @@ function parseMarkersXML(uniqueId, xmlData) {
   }
 }
 
-function getMarkers(uniqueId, action, mode, setRotationTime, 
+function getMarkers(uniqueId, action, mode, setRotationTime,
                     showDescription, zoomIntoFocus, color, clusterer) {
   // store var in global context
   window.markerAction = action;

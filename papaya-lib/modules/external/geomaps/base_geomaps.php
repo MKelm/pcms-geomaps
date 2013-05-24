@@ -134,13 +134,15 @@ class base_geomaps extends base_db {
     // initialize api names
     $this->apiTypeNames = array(
       0 => 'google',
-      1 => 'yahoo'
+      1 => 'yahoo',
+      2 => 'ol'
     );
 
     // initialize api titles
     $this->apiTypeTitles = array(
       0 => 'Google Maps',
-      1 => 'Yahoo Maps'
+      1 => 'Yahoo Maps',
+      2 => 'Open Layers'
     );
   }
 
@@ -327,7 +329,7 @@ class base_geomaps extends base_db {
     }
     return FALSE;
   }
-  
+
   /**
    * Adds a new folder with title and marker icon
    *
@@ -336,18 +338,18 @@ class base_geomaps extends base_db {
    * @return boolean status or integer id
    */
   function addFolder($title, $markerIcon = '') {
-	$data = array(
+  $data = array(
       'folder_title' => $title,
       'folder_marker_icon' => $markerIcon
     );
-	$newId = $this->databaseInsertRecord(
-	  $this->tableFolders, 'folder_id', $data
-	);
-	if ($newId > 0) {
-	  return $newId;
-	} else {
-	  return FALSE;
-	} 
+  $newId = $this->databaseInsertRecord(
+    $this->tableFolders, 'folder_id', $data
+  );
+  if ($newId > 0) {
+    return $newId;
+  } else {
+    return FALSE;
+  }
   }
 
   /**
@@ -416,7 +418,7 @@ class base_geomaps extends base_db {
     }
     return FALSE;
   }
-  
+
   /**
    * Deletes all markers in a specified folder
    * @param integer $folderId
@@ -560,9 +562,9 @@ class base_geomaps extends base_db {
 
     // Use markers by param or loaded markers
     $markers = (is_array($markers) && count($markers) > 0)
-      ? $markers : $this->markers; 
+      ? $markers : $this->markers;
 
-    if (is_array($markers) && count($markers) > 0) {      
+    if (is_array($markers) && count($markers) > 0) {
       // Get markers xml / kml
       $result = '';
       foreach ($markers as $key => $marker) {
@@ -597,13 +599,13 @@ class base_geomaps extends base_db {
 
         // at a style reference (for google maps compatible kml and custom icons)
         if (!empty($marker['marker_icon'])) {
-          
+
           if (!isset($mediaDB)) {
             include_once(PAPAYA_INCLUDE_PATH.'system/base_mediadb.php');
             $mediaDB = base_mediadb::getInstance();
             $loadedMarkerIconsXML = array();
           }
-          
+
           if (!isset($loadedMarkerIconsXML[$marker['marker_icon']])) {
             if (checkit::isGUID($marker['marker_icon'], TRUE)) {
               $iconFile = $mediaDB->getFileName($marker['marker_icon']);
@@ -618,7 +620,7 @@ class base_geomaps extends base_db {
                 );
               }
             }
-            if (!empty($iconMediaFile) && 
+            if (!empty($iconMediaFile) &&
                 (!empty($iconSize[0]) && !empty($iconSize[1]))) {
 
               $loadedMarkerIconsXML[$marker['marker_icon']] = sprintf(
@@ -632,11 +634,11 @@ class base_geomaps extends base_db {
                 '</Style>'.LF,
                 $key,
                 $iconMediaFile,
-                $iconSize[0], 
+                $iconSize[0],
                 $iconSize[1]
               );
               $loadedMarkerIconsXML[$marker['marker_icon']] .= sprintf(
-                '<styleUrl>customPlacemark%d</styleUrl>'.LF, 
+                '<styleUrl>customPlacemark%d</styleUrl>'.LF,
                 $key
               );
               $result .= $loadedMarkerIconsXML[$marker['marker_icon']];
@@ -647,7 +649,7 @@ class base_geomaps extends base_db {
 
         } elseif (!is_null($styleUrl)) {
           $result .= sprintf('<styleUrl>%s</styleUrl>'.LF, $styleUrl);
-        } 
+        }
 
         $result .= '</Placemark>'.LF;
       }
