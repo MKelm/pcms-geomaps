@@ -29,6 +29,9 @@ http://cdemo.idxsolutions.de
 
 *Changelog*
 
+_Rev. 0.28a (2010-05-22)_ (hotfix)
+- Fixed dynamic icon images with anchor in dynamic google map
+
 _Rev. 0.28 (2010-04-30)_ (three years revision)
 - Added OpenLayers / Open Street Map box module with basic functions (GM)
 - Changed data page url generation to get post request compatible url (GM)

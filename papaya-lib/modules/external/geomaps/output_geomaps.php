@@ -1039,6 +1039,7 @@ class output_geomaps extends base_geomaps {
     $result = sprintf(
       '<select name="%s[%s]" class="dialogSelect dialogScale">'.LF,
       $paramName, $name);
+    $result .= sprintf('<option value="">%s</option>', $this->_gt('Select'));
 
     $sql = "SELECT i.image_id, i.image_title
               FROM %s i

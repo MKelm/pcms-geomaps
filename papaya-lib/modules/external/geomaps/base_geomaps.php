@@ -619,6 +619,20 @@ class base_geomaps extends base_db {
                   $this->getWebMediaLink($marker['marker_icon'], 'media')
                 );
               }
+            } else {
+              $pattern = "/img\[image_guid\]=([a-z0-9]{32})&".
+                  "img\[width\]=([0-9]+)&".
+                  "img\[height\]=([0-9]+)/";
+              preg_match_all(
+                $pattern,
+                $marker['marker_icon'],
+                $dynImageData
+              );
+              if (isset($dynImageData[1][0]) &&
+                  isset($dynImageData[2][0]) && isset($dynImageData[3][0])) {
+                $iconMediaFile = $marker['marker_icon'];
+                $iconSize = array($dynImageData[2][0], $dynImageData[3][0]);
+              }
             }
             if (!empty($iconMediaFile) &&
                 (!empty($iconSize[0]) && !empty($iconSize[1]))) {
