@@ -10,31 +10,32 @@
 
   <xsl:template match="geo-map">
     <!-- main template -->
-    <xsl:choose>
-      <xsl:when test="static and static/@force = 1">
-        <!-- force static content only -->
-        <div id="map_{base/@id}" class="geoMap">
-          <xsl:call-template name="static-content" />
-        </div>
-      </xsl:when>
-      <xsl:otherwise>
-        <!-- coordinates mode container -->
-        <xsl:if test ="base/@coor-mode = 1">
-          <div id="coor_{base/@id}" class="geoMapCoor"><xsl:text> </xsl:text></div>
-        </xsl:if>
-        <!-- map html container -->
-        <div id="map_{base/@id}" class="geoMap" style="width: {settings/@width}px; height: {settings/@height}px;">
-          <xsl:call-template name="noscript-content" /><xsl:text> </xsl:text>
-        </div>
-        <!-- js files -->
-        <xsl:call-template name="include-js-files" />
-        <!-- js content -->
-        <xsl:call-template name="map-js-content" />
-      </xsl:otherwise>
-    </xsl:choose>
+    <xsl:if test="base/api/@type and base/api/@key and base/api/@key  != ''">
+      <xsl:choose>
+        <xsl:when test="static and static/@force = 1">
+          <!-- force static content only -->
+          <div id="map_{base/@id}" class="geoMap">
+            <xsl:call-template name="static-content" />
+          </div>
+        </xsl:when>
+        <xsl:otherwise>
+          <!-- coordinates mode container -->
+          <xsl:if test ="base/@coor-mode = 1">
+            <div id="coor_{base/@id}" class="geoMapCoor"><xsl:text> </xsl:text></div>
+          </xsl:if>
+          <!-- map html container -->
+          <div id="map_{base/@id}" class="geoMap" style="width: {settings/@width}px; height: {settings/@height}px;">
+            <xsl:call-template name="noscript-content" /><xsl:text> </xsl:text>
+          </div>
+          <!-- js files -->
+          <xsl:call-template name="include-js-files" />
+          <!-- js content -->
+          <xsl:call-template name="map-js-content" />
+        </xsl:otherwise>
+      </xsl:choose>
 
-    <xsl:call-template name="trip-planner-link" />
-
+      <xsl:call-template name="trip-planner-link" />
+    </xsl:if>
   </xsl:template>
 
   <xsl:template name="include-js-files">

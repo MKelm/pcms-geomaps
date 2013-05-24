@@ -212,7 +212,7 @@ class base_geomaps extends base_db {
   function getDistinctKey($host, $keyType, $useCache = FALSE) {
     if (!empty($host)) {
       if ($useCache === TRUE && !empty($keyType) && count($this->keys) > 0) {
-        foreach ($this->keys as &$key) {
+        foreach ($this->keys as $key) {
           if ($key['key_type'] == $keyType
               && strpos(strtolower($key['key_host']), strtolower($host)) !== FALSE) {
             return $key;

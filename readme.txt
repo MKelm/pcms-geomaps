@@ -1,6 +1,6 @@
 *Geo maps modules for papaya CMS 5*
 
-Revision 0.20, 2008-11-10
+Revision 0.21, 2008-11-10
 
 Authors:
 Martin Kelm <martinkelm@idxsolutions.de>
@@ -10,12 +10,8 @@ Support and good fairy:
 geomaps@idxsolutions.de
 
 *Templates*
-- move "box_geomaps.xsl" to your (x)html template folder
-- move "geomaps_markers.xsl" to your xml data template folder
-
-*geomaps_markers.xsl, views and mime types*
-- for internal ajax requests: text/xml (no session)
-- for public kml downloads: application/vnd.google-earth.kml+xml (no session)
+- "box_geomaps.xsl": use a text/html output filter
+- "geomaps_markers.xsl": use a text/xml output filter
 
 *License*
 GNU General Public Licence (GPL): gpl.txt
@@ -29,6 +25,11 @@ GNU General Public Licence (GPL): gpl.txt
 - Import for KML, ...
 
 *Changelog*
+
+_Rev. 0.21 (2008-11-10)_
+- Fixed PHP4 compatibility
+- Fixed papaya CMS RC1 compatibility
+- Some smaller imprevements
 
 _Rev. 0.20 (2008-11-10)_
 - Refactored output again to get a better xml structure and options handling

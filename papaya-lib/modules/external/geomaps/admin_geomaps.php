@@ -55,7 +55,7 @@ class admin_geomaps extends base_geomaps {
   }
 
   function admin_geomaps() {
-    $this->admin_geomaps();
+    $this->__construct();
   }
 
   function initialize(&$module, &$images, &$msgs, &$layout, &$authUser) {
@@ -1121,7 +1121,7 @@ class admin_geomaps extends base_geomaps {
       }
 
       $result .= sprintf('<script type="text/javascript" src="%sgeomaps.js" />'.LF,
-        $this->getOption('scripts_path', '/'));
+        $this->getOption('scripts_path', '/papaya-script/geomaps/'));
       $result .= sprintf('<script type="text/javascript"> <![CDATA[ apiType = %d; ]]> </script>'.LF,
         $type);
 
