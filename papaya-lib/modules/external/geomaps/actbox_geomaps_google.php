@@ -6,13 +6,15 @@
  * @link http://www.idxsolutions.de
  * @licence GNU General Public Licence (GPL) 2 http://www.gnu.org/copyleft/gpl.html
  *
- * You can redistribute and/or modify this script under the terms of the GNU General Public
- * License (GPL) version 2, provided that the copyright and license notes, including these
- * lines, remain unmodified. This script is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE.
+ * You can redistribute and/or modify this script under the terms of the GNU General
+ * Public License (GPL) version 2, provided that the copyright and license notes,
+ * including these lines, remain unmodified. This script is distributed in the hope that
+ * it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *
  * @package module_geomaps
+ * @author Martin Kelm <martinkelm@idxsolutions.de>
+ * @author Bastian Feder <info@papaya-cms.com> <extensions>
  */
 
 /**
@@ -24,6 +26,8 @@ require_once(PAPAYA_INCLUDE_PATH.'system/base_actionbox.php');
  * Geo maps box for Google Maps
  *
  * @package module_geomaps
+ * @author Martin Kelm <martinkelm@idxsolutions.de>
+ * @author Bastian Feder <info@papaya-cms.com> <extensions>
  */
 class actionbox_geomaps_google extends base_actionbox {
 

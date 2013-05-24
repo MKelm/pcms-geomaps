@@ -1,30 +1,32 @@
 <?php
 /**
-* Marker data KML for xml http requests or downloads
-*
-* @copyright 2007-2009 by Martin Kelm - All rights reserved.
-* @link http://www.idxsolutions.de
-* @licence GNU General Public Licence (GPL) 2 http://www.gnu.org/copyleft/gpl.html
-*
-* You can redistribute and/or modify this script under the terms of the GNU General Public
-* License (GPL) version 2, provided that the copyright and license notes, including these
-* lines, remain unmodified. This script is distributed in the hope that it will be useful, but
-* WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-* FOR A PARTICULAR PURPOSE.
-*
-* @package module_geomaps
-*/
+ * Marker data KML for xml http requests or downloads
+ *
+ * @copyright 2007-2009 by Martin Kelm - All rights reserved.
+ * @link http://www.idxsolutions.de
+ * @licence GNU General Public Licence (GPL) 2 http://www.gnu.org/copyleft/gpl.html
+ *
+ * You can redistribute and/or modify this script under the terms of the GNU General
+ * Public License (GPL) version 2, provided that the copyright and license notes,
+ * including these lines, remain unmodified. This script is distributed in the hope that
+ * it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ * @package module_geomaps
+ * @author Martin Kelm <martinkelm@idxsolutions.de>
+ */
 
 /**
-* Basic class page module
-*/
+ * Basic class page module
+ */
 require_once(PAPAYA_INCLUDE_PATH.'system/base_content.php');
 
 /**
-* Marker data KML for xml http requests or downloads
-*
-* @package module_geomaps
-*/
+ * Marker data KML for xml http requests or downloads
+ *
+ * @package module_geomaps
+ * @author Martin Kelm <martinkelm@idxsolutions.de>
+ */
 class content_geomaps_markers extends base_content {
 
   var $paramName = 'gmps';
@@ -38,16 +40,22 @@ class content_geomaps_markers extends base_content {
     'default_folder_id' => array('Default folder', 'isNum', TRUE, 'function',
       'callbackFoldersList'),
     'Icon Decoration',
-    'decoration_image' => array('Dynamic Image', 'isNum', TRUE, 'function',
-      'callbackDynamicImages')
+    'icon_decoration_image' => array('Dynamic Image', 'isNum', TRUE, 'function',
+      'callbackDynamicImages', '', NULL),
+    'icon_thumb_width' => array(
+      'Icon Thumb Width', 'isNoHTML', TRUE, 'input', 100, '', 0
+    ),
+    'icon_thumb_height' => array(
+      'Icon Thumb Height', 'isNoHTML', TRUE, 'input', 100, '', 0
+    )
   );
 
   /**
    * Get cache identifier related to given parameters.
    */
   function getCacheId() {
-    return md5('_'.
-      ((isset($this->params['ressource_type'])) ? $this->params['ressource_type'] : '').'_'.
+    return md5('_'.((isset($this->params['ressource_type'])) ?
+        $this->params['ressource_type'] : '').'_'.
       ((isset($this->params['ressource_id'])) ? $this->params['ressource_id'] : '').'_'.
       ((isset($this->params['ressource_lat'])) ? $this->params['ressource_lat'] : '').'_'.
       ((isset($this->params['ressource_lng'])) ? $this->params['ressource_lng'] : '').'_'.
@@ -132,9 +140,9 @@ class content_geomaps_markers extends base_content {
         ? $this->params['ressource_id'] : '';
       switch ($ressourceType) {
       case 'spatial_polygon':
-        if (!empty($ressourceId)
-            && !empty($this->params['ressource_lat'])
-            && !empty($this->params['ressource_lng'])) {
+        if (!empty($ressourceId) &&
+            !empty($this->params['ressource_lat']) &&
+            !empty($this->params['ressource_lng'])) {
           $this->loadMarkerInPolygon(
             $ressourceId, // folder id
             $this->params['ressource_lat'],
@@ -148,12 +156,23 @@ class content_geomaps_markers extends base_content {
           $ressourceId = $this->data['default_folder_id'];
         }
         $this->outputObj->loadMarkers($ressourceId);
-        $this->outputObj->decorateMarkerIcons($this->data['decoration_image']);
+        if (!empty($this->data['icon_decoration_image'])) {
+          $this->outputObj->decorateMarkerIcons(
+            $this->data['icon_decoration_image'],
+            (!empty($this->data['icon_thumb_width'])) ?
+              $this->data['icon_thumb_width'] : NULL,
+            (!empty($this->data['icon_thumb_height'])) ?
+              $this->data['icon_thumb_height'] : NULL
+          );
+        }
       }
 
       // show markers xml if any exists
       if (count($this->outputObj->markers) > 0) {
-        $xml = sprintf('<markers base-kml="%d">'.LF, @$this->params['base_kml']);
+        $xml = sprintf(
+          '<markers base-kml="%d">'.LF,
+          !empty($this->params['base_kml']) ? $this->params['base_kml'] : ''
+        );
 
         // get base kml for internal ajax communication
         if (isset($this->params['base_kml']) && $this->params['base_kml'] == 1) {

@@ -6,13 +6,14 @@
 * @link http://www.idxsolutions.de
 * @licence GNU General Public Licence (GPL) 2 http://www.gnu.org/copyleft/gpl.html
 *
-* You can redistribute and/or modify this script under the terms of the GNU General Public
-* License (GPL) version 2, provided that the copyright and license notes, including these
-* lines, remain unmodified. This script is distributed in the hope that it will be useful, but
-* WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-* FOR A PARTICULAR PURPOSE.
+ * You can redistribute and/or modify this script under the terms of the GNU General
+ * Public License (GPL) version 2, provided that the copyright and license notes,
+ * including these lines, remain unmodified. This script is distributed in the hope that
+ * it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 *
 * @package module_geomaps
+* @author Martin Kelm <martinkelm@idxsolutions.de>
 */
 
 /**
@@ -24,6 +25,7 @@ require_once(PAPAYA_INCLUDE_PATH.'system/sys_base_db.php');
 * Basic class for Geo Maps
 *
 * @package module_geomaps
+* @author Martin Kelm <martinkelm@idxsolutions.de>
 */
 class base_geomaps extends base_db {
 
@@ -157,12 +159,10 @@ class base_geomaps extends base_db {
    */
   function initSpatialExtensions() {
     if (!(isset($this->spatialExtensions) && is_object($this->spatialExtensions))) {
-      if ($this->getOption('spatial_functions', 0) == 1) {
-        include_once(dirname(__FILE__).'/base_spatial_extensions.php');
-        $this->spatialExtensions = &new base_spatial_extensions();
-        if (isset($this->spatialExtensions) && is_object($this->spatialExtensions)) {
-          return TRUE;
-        }
+      include_once(dirname(__FILE__).'/base_spatial_extensions.php');
+      $this->spatialExtensions = &new base_spatial_extensions();
+      if (isset($this->spatialExtensions) && is_object($this->spatialExtensions)) {
+        return TRUE;
       }
     }
     return FALSE;
@@ -396,16 +396,6 @@ class base_geomaps extends base_db {
     return FALSE;
   }
 
-  /* Deletes a single marker.
-   *
-   * @param integer $markerId
-   * @return boolean status
-   */
-  function deleteMarker($markerId) {
-    return $this->databaseDeleteRecord($this->tableMarkers,
-      'marker_id', $markerId);
-  }
-
   /**
    * Load a list of markers by folder id and get the absolute amount
    *
@@ -459,7 +449,7 @@ class base_geomaps extends base_db {
     return FALSE;
   }
 
-  function decorateMarkerIcons($dynamicImageId) {
+  function decorateMarkerIcons($dynamicImageId, $width, $height) {
 
     if ($this->markersCount > 0 && !empty($dynamicImageId)) {
 
@@ -474,14 +464,21 @@ class base_geomaps extends base_db {
 
           // replace marker images
           foreach ($this->markers as $markerId => $marker) {
+
             if (!empty($marker['marker_icon']) && strlen($marker['marker_icon']) == 32) {
 
               if (!isset($iconImageIdsTo[$marker['marker_icon']])) {
-                $dynImage = sprintf('%s.image.png?img[image_guid]=%s',
-                  $imageIdent, $marker['marker_icon']);
-                $iconImageIdsTo[$marker['marker_icon']] = $this->getAbsoluteURL($dynImage);
+                $dynImage = sprintf(
+                  '%s.image.png?img[image_guid]=%s&img[width]=%d&img[height]=%d',
+                  $imageIdent, $marker['marker_icon'],
+                  $width,
+                  $height
+                );
+                $iconImageIdsTo[$marker['marker_icon']] =
+                  $this->getAbsoluteURL($dynImage);
               }
-              $this->markers[$markerId]['marker_icon'] = $iconImageIdsTo[$marker['marker_icon']];
+              $this->markers[$markerId]['marker_icon'] =
+                $iconImageIdsTo[$marker['marker_icon']];
             }
           }
         }
@@ -529,9 +526,12 @@ class base_geomaps extends base_db {
    * @param array $markers A list of markers.
    * @param string $styleUrl Adds a style url, see admin_geomaps::exportMarkersKML
    * @param boolean $lookAt Adds lookAt-Point, see admin_geomaps::exportMarkersKML
+   * @param integer $fixedIconWidth use a fixed icon width to get dynamic icon images
+   * @param integer $fixedIconHeight use a fixed icon height to get dyanmic icon images
    * @return stringt $result xml
    */
-  function getMarkersBaseKML($markers = NULL, $styleUrl = NULL, $lookAt = FALSE) {
+  function getMarkersBaseKML($markers = NULL, $styleUrl = NULL, $lookAt = FALSE,
+                             $fixedIconWidth = NULL, $fixedIconHeight = NULL) {
 
     // Use markers by param or loaded markers
     $markers = (is_array($markers) && count($markers) > 0)
@@ -577,15 +577,32 @@ class base_geomaps extends base_db {
 
           if (preg_match('#^[a-z\d]{32}$#', $marker['marker_icon']) &&
               file_exists($mediaDB->getFileName($marker['marker_icon']))) {
-            $iconFile = $this->getAbsoluteURL($this->getWebMediaLink($marker['marker_icon'], 'media'));
+            $iconFile = $this->getAbsoluteURL(
+              $this->getWebMediaLink($marker['marker_icon'], 'media')
+            );
           } elseif (file_exists(getenv('DOCUMENT_ROOT').'/'.$marker['marker_icon'])) {
             $iconFile = $this->getAbsoluteURL($marker['marker_icon']);
           } elseif (checkit::isHTTPX($marker['marker_icon'], TRUE)) {
             $iconFile = $marker['marker_icon'];
+          } else {
+            $mediaFileUrl = 'http://'.$_SERVER['HTTP_HOST'].'/'.$marker['marker_icon'];
+            if (checkit::isHTTPX($mediaFileUrl, TRUE)) {
+              $iconFile = $mediaFileUrl;
+            }
           }
 
-          $iconSize = @getimagesize($iconFile);
-          if (!empty($iconFile) && !empty($iconSize[0]) && !empty($iconSize[1])) {
+          if (!($fixedIconHeight > 0 && $fixedIconWidth > 0)) {
+            $iconSize = @getimagesize($iconFile);
+          }
+
+          if (!empty($iconFile) && ((!empty($iconSize[0]) && !empty($iconSize[1])) ||
+                ($fixedIconHeight > 0 && $fixedIconWidth > 0)) ) {
+
+            if ($fixedIconHeight > 0 && $fixedIconWidth > 0) {
+              $iconSize = array(
+                $fixedIconWidth, $fixedIconHeight
+              );
+            }
 
             $result .= sprintf('<Style id="customPlacemark%d">'.LF.
                                '<IconStyle>'.LF.
@@ -622,9 +639,12 @@ class base_geomaps extends base_db {
    * @param array $markers A list of markers.
    * @param string $folderTitle
    * @param string $fileName
+   * @param integer $fixedIconWidth use a fixed icon width to get dynamic icon images
+   * @param integer $fixedIconHeight use a fixed icon height to get dyanmic icon images
    * @return stringt $result xml
    */
-  function getMarkersKML($markers, $folderTitle = NULL, $fileName = NULL) {
+  function getMarkersKML($markers, $folderTitle = NULL, $fileName = NULL,
+                         $fixedIconWidth = NULL, $fixedIconHeight = NULL) {
 
     if (empty($folderTitle)) {
       // Set folder title
@@ -644,7 +664,8 @@ class base_geomaps extends base_db {
                       '<IconStyle>'.LF.
                       '<scale>1.3</scale>'.LF.
                       '<Icon>'.LF.
-                      '<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>'.LF.
+                      '<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png'.
+                      '</href>'.LF.
                       '</Icon>'.LF.
                       '<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>'.LF.
                       '</IconStyle>'.LF.
@@ -653,7 +674,8 @@ class base_geomaps extends base_db {
                       '<IconStyle>'.LF.
                       '<scale>1.1</scale>'.LF.
                       '<Icon>'.LF.
-                      '<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>'.LF.
+                      '<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png'.
+                      '</href>'.LF.
                       '</Icon>'.LF.
                       '<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>'.LF.
                       '</IconStyle>'.LF.
@@ -677,7 +699,9 @@ class base_geomaps extends base_db {
                       '</kml>'.LF,
       $fileName,
       $folderTitle,
-      $this->getMarkersBaseKML($markers, '#msn_ylw-pushpin', TRUE)
+      $this->getMarkersBaseKML(
+        $markers, '#msn_ylw-pushpin', TRUE, $fixedIconWidth, $fixedIconHeight
+      )
     );
 
     return $result;

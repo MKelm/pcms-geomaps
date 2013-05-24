@@ -6,13 +6,14 @@
  * @link http://www.idxsolutions.de
  * @licence GNU General Public Licence (GPL) 2 http://www.gnu.org/copyleft/gpl.html
  *
- * You can redistribute and/or modify this script under the terms of the GNU General Public
- * License (GPL) version 2, provided that the copyright and license notes, including these
- * lines, remain unmodified. This script is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE.
+ * You can redistribute and/or modify this script under the terms of the GNU General
+ * Public License (GPL) version 2, provided that the copyright and license notes,
+ * including these lines, remain unmodified. This script is distributed in the hope that
+ * it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *
  * @package module_geomaps
+ * @author Martin Kelm <kelm@idxsolutions.de>
  */
 
 /**
@@ -31,6 +32,7 @@ require_once(PAPAYA_INCLUDE_PATH.'system/base_plugin.php');
  * );
  *
  * @package module_geomaps
+ * @author Martin Kelm <kelm@idxsolutions.de>
  */
 class connector_geomaps extends base_plugin {
 
@@ -88,19 +90,8 @@ class connector_geomaps extends base_plugin {
                      $description = NULL, $street = NULL, $house = NULL,
                      $zip = NULL, $city = NULL, $country = NULL) {
     $baseObj = &$this->getBaseObject();
-    return $baseObj->setMarker($folderId, $title, $lat, $lng, $icon,
-      $description, $street, $house, $zip, $city, $country, TRUE, NULL);
-  }
-
-  /**
-   * Deletes a single marker.
-   *
-   * @param integer $markerId
-   * @return status boolean
-   */
-  function deleteMarker($markerId) {
-    $baseObj = &$this->getBaseObject();
-    return $baseObj->deleteMarker($markerId);
+    return $baseObj->setMarker($folderId, $title, $lat, $lng, $description,
+      $street, $house, $zip, $city, $country, TRUE, NULL);
   }
 
   /**
@@ -129,6 +120,32 @@ class connector_geomaps extends base_plugin {
   function checkSpatialPointInPolygon($latitude, $longitude, $folderId) {
     $baseObj = &$this->getBaseObject();
     return $baseObj->checkSpatialPointInPolygon($latitude, $longitude, $folderId);
+  }
+
+  /**
+   * Get a page link to the markers rpc page for external module packages.
+   *
+   * @param string $ressourceType
+   * @param mixed $ressourceId
+   * @return string
+   */
+  function getRPCPageLink($ressourceType = NULL, $ressourceId = NULL) {
+    $baseObj = &$this->getBaseObject();
+    $params = array();
+    if ($ressourceType !== NULL) {
+      $params['ressource_type'] = $ressourceType;
+    }
+    if ($ressourceId !== NULL) {
+      $params['ressource_id'] = $ressourceId;
+    }
+    $pageId = $baseObj->getOption('rpc_page_id', 0);
+    if ($pageId > 0) {
+      $viewMode = $baseObj->getOption('rpc_view_mode', 0);
+      return $this->getWebLink(
+        $pageId, NULL, $viewMode, $params, $this->paramName
+      );
+    }
+    return '';
   }
 
 }

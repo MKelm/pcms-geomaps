@@ -12,6 +12,7 @@
 * FOR A PARTICULAR PURPOSE.
 *
 * @package module_geomaps
+* @author Martin Kelm <martinkelm@idxsolutions.de>
 */
 
 // Get coordinates depends on active api

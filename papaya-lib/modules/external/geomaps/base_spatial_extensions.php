@@ -2,17 +2,18 @@
 /**
 * Basic class for mysql spatial extensions
 *
-* @copyright 2009 by Martin Kelm - All rights reserved.
+* @copyright 2007-2009 by Martin Kelm - All rights reserved.
 * @link http://www.idxsolutions.de
 * @licence GNU General Public Licence (GPL) 2 http://www.gnu.org/copyleft/gpl.html
 *
-* You can redistribute and/or modify this script under the terms of the GNU General Public
-* License (GPL) version 2, provided that the copyright and license notes, including these
-* lines, remain unmodified. This script is distributed in the hope that it will be useful, but
-* WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-* FOR A PARTICULAR PURPOSE.
+ * You can redistribute and/or modify this script under the terms of the GNU General
+ * Public License (GPL) version 2, provided that the copyright and license notes,
+ * including these lines, remain unmodified. This script is distributed in the hope that
+ * it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 *
 * @package module_geomaps
+* @author Martin Kelm <martinkelm@idxsolutions.de>
 */
 
 /**
@@ -28,6 +29,7 @@ require_once(PAPAYA_INCLUDE_PATH.'system/sys_checkit.php');
 * Basic class for mysql spatial extensions
 *
 * @package module_geomaps
+* @author Martin Kelm <martinkelm@idxsolutions.de>
 */
 class base_spatial_extensions extends base_db {
 
@@ -148,7 +150,7 @@ class base_spatial_extensions extends base_db {
 
     if (!empty($points) && is_array($points) && (int)$folderId > 0) {
 
-      $maxIdx = count($points)-1;
+      $maxIdx = count($points) - 1;
       $polygonLocations = 'Polygon((';
       foreach ($points as $idx => $point) {
         if (isset($point[0]) && isset($point[1])
@@ -179,8 +181,9 @@ class base_spatial_extensions extends base_db {
    */
   function removeSpatialPolygon($folderId) {
     if ((int)$folderId > 0) {
-      return FALSE !==
-        $this->databaseDeleteRecord($this->tablePolygons, 'polygon_folder_id', (int)$folderId);
+      return FALSE !== $this->databaseDeleteRecord(
+        $this->tablePolygons, 'polygon_folder_id', (int)$folderId
+      );
     }
     return FALSE;
   }
@@ -194,7 +197,9 @@ class base_spatial_extensions extends base_db {
   function countSpatialPolygons($folderId = NULL) {
 
     if ($folderId !== NULL) {
-      $cond = ' WHERE '.$this->databaseGetSqlCondition('polygon_folder_id', (int)$folderId);
+      $cond = ' WHERE '.$this->databaseGetSqlCondition(
+        'polygon_folder_id', (int)$folderId
+      );
     } else {
       $cond = '';
     }

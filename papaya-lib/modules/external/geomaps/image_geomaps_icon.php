@@ -1,30 +1,32 @@
 <?php
 /**
-* Dynamic image module to decorate marker icons
-*
-* @copyright 2009 by Martin Kelm - All rights reserved.
-* @link http://www.idxsolutions.de
-* @licence GNU General Public Licence (GPL) 2 http://www.gnu.org/copyleft/gpl.html
-*
-* You can redistribute and/or modify this script under the terms of the GNU General Public
-* License (GPL) version 2, provided that the copyright and license notes, including these
-* lines, remain unmodified. This script is distributed in the hope that it will be useful, but
-* WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-* FOR A PARTICULAR PURPOSE.
-*
-* @package module_geomaps
-*/
+ * Dynamic image module to decorate marker icons
+ *
+ * @copyright 2007 by Martin Kelm - All rights reserved.
+ * @link http://www.idxsolutions.de
+ * @licence GNU General Public Licence (GPL) 2 http://www.gnu.org/copyleft/gpl.html
+ *
+ * You can redistribute and/or modify this script under the terms of the GNU General
+ * Public License (GPL) version 2, provided that the copyright and license notes,
+ * including these lines, remain unmodified. This script is distributed in the hope that
+ * it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ * @package module_geomaps
+ * @author Martin Kelm <martinkelm@idxsolutions.de>
+ */
 
 /**
-* Base class for image plugins
-*/
+ * Base class for image plugins
+ */
 require_once(PAPAYA_INCLUDE_PATH.'system/base_dynamicimage.php');
 
 /**
-* Dynamic image module to decorate marker icons
-*
-* @package module_geomaps
-*/
+ * Dynamic image module to decorate marker icons
+ *
+ * @package module_geomaps
+ * @author Martin Kelm <martinkelm@idxsolutions.de>
+ */
 class image_geomaps_icon extends base_dynamicimage {
 
   /**
@@ -43,8 +45,34 @@ class image_geomaps_icon extends base_dynamicimage {
   * @var array $attributeFields
   */
   var $attributeFields = array(
-    'image_guid' => array('Image', 'isGuid', FALSE, 'imagefixed', 32, '', '')
+    'image_guid' => array('Image', 'isGuid', FALSE, 'imagefixed', 32, '', ''),
+    'width' => array('Width', 'isNum', FALSE, 'input', 10, '', 0),
+    'height' => array('Height', 'isNum', FALSE, 'input', 10, '', 0)
   );
+
+  /**
+   * Thumbnail object to get icon thumbnails
+   * @var object $thumbnailObj
+   */
+  var $thumbnailObj = NULL;
+
+  /**
+   * Initialize thumbnail object
+   * @return boolean status
+   */
+  function initThumbnailObj() {
+    if (!is_object($this->thumbnailObj) || !is_a($this->thumbnailObj, 'base_thumbnail')) {
+      include_once(PAPAYA_INCLUDE_PATH.'system/base_thumbnail.php');
+      $this->thumbnailObj = &new base_thumbnail();
+
+      if (is_object($this->thumbnailObj) && is_a($this->thumbnailObj, 'base_thumbnail')) {
+        return TRUE;
+      }
+    } else {
+      return TRUE;
+    }
+    return FALSE;
+  }
 
   /**
   * generate the image
@@ -56,14 +84,35 @@ class image_geomaps_icon extends base_dynamicimage {
   function &generateImage(&$controller) {
     $result = NULL;
 
-    if (empty($this->data['anchor_image_id']) || empty($this->data['anchor_alignment'])
-        || !($anchorImage = &$controller->getMediaFileImage($this->data['anchor_image_id']))) {
+    // validate anchor image
+    if (empty($this->data['anchor_image_id']) || empty($this->data['anchor_alignment']) ||
+        !($anchorImage = &$controller->getMediaFileImage(
+          $this->data['anchor_image_id']
+        ))) {
       return $result;
     }
 
-    if (empty($this->attributes['image_guid'])
-        || !($iconImage = &$controller->getMediaFileImage($this->attributes['image_guid']))) {
+    // validate icon image
+    if (empty($this->attributes['image_guid']) ||
+        !($iconImage = &$controller->getMediaFileImage(
+          $this->attributes['image_guid']
+        ))) {
       return $result;
+    }
+
+    // generate thumb image from original icon image
+    if (!empty($this->attributes['width']) && !empty($this->attributes['height']) &&
+        $this->initThumbnailObj()) {
+
+      $thumbFileName = $this->thumbnailObj->getThumbnail(
+        $this->attributes['image_guid'], NULL,
+        $this->attributes['width'], $this->attributes['height'], 'mincrop', NULL
+      );
+
+      $thumbFile = PAPAYA_PATH_THUMBFILES.
+        $this->thumbnailObj->getThumbFilePath($thumbFileName).$thumbFileName;
+
+      $iconImage = &$controller->loadImage($thumbFile);
     }
 
     // get max image size and new image positions

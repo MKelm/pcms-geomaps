@@ -2,29 +2,33 @@
 /**
  * Output class for geo maps content
  *
- * @copyright 2007-2009 by Martin Kelm - All rights reserved.
+ * @copyright 2007 by Martin Kelm - All rights reserved.
  * @link http://www.idxsolutions.de
  * @licence GNU General Public Licence (GPL) 2 http://www.gnu.org/copyleft/gpl.html
  *
- * You can redistribute and/or modify this script under the terms of the GNU General Public
- * License (GPL) version 2, provided that the copyright and license notes, including these
- * lines, remain unmodified. This script is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE.
+ * You can redistribute and/or modify this script under the terms of the GNU General
+ * Public License (GPL) version 2, provided that the copyright and license notes,
+ * including these lines, remain unmodified. This script is distributed in the hope that
+ * it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *
  * @package module_geomaps
+ * @author Martin Kelm <martinkelm@idxsolutions.de>
+ * @author Bastian Feder <info@papaya-cms.com> <extensions>
  */
 
 /**
-* Basic geo maps class
-*/
+ * Basic geo maps class
+ */
 require_once(dirname(__FILE__).'/base_geomaps.php');
 
 /**
-* Output for geo maps content
-*
-* @package module_geomaps
-*/
+ * Output for geo maps content
+ *
+ * @package module_geomaps
+ * @author Martin Kelm <martinkelm@idxsolutions.de>
+ * @author Bastian Feder <info@papaya-cms.com> <extensions>
+ */
 class output_geomaps extends base_geomaps {
 
   /**
@@ -163,9 +167,9 @@ class output_geomaps extends base_geomaps {
                            $centerMode = NULL, $markersFolderId = NULL) {
 
     // depends on base data
-    if (!empty($this->data['base']) && !empty($type)
-        && $width > 0 && $height > 0
-        && is_array($controls) && count($controls) > 0) {
+    if (!empty($this->data['base']) && !empty($type) &&
+        $width > 0 && $height > 0 &&
+        is_array($controls) && count($controls) > 0) {
 
       // get another center mode if possible
       $centerPoint = NULL;
@@ -246,29 +250,36 @@ class output_geomaps extends base_geomaps {
   function setMarkersData($pageId, $viewMode, $ressourceType, $ressourceId,
                           $color, $mode, $rotation,
                           $showDescription, $mouseDescAction, $zoomIntoFocus,
-                          $polylineActive, $polylineColor, $polylineSize) {
+                          $polylineActive, $polylineColor, $polylineSize,
+                          $ressourceParams = NULL) {
 
-    $this->data['markers'] = array(
-      'ressource_type' => $ressourceType,
-      'ressource_id' => $ressourceId, // int id
-      'mode' => $mode, // string mode
-      'rotation' => $rotation, // int yes/no
-      'show_description' => $showDescription, // int yes/no
-      'mouse_desc_action' => $mouseDescAction, // string action
-      'zoom_into_focus' => $zoomIntoFocus, // int yes/no
-      'color' => $color, // string color
-      'data_page' => array(
-        'page_id' => $pageId, // int id
-        'view_mode' => $viewMode // string mode
-      ),
-      'polyline' => array(
-        'active' => $polylineActive, // int yes/no
-        'color' => $polylineColor, // string color
-        'size' => $polylineSize // int size
-      )
-    );
+    if ($pageId > 0 && !empty($viewMode) && !empty($mouseDescAction)) {
 
-    return TRUE;
+      $this->data['markers'] = array(
+        'ressource_type' => $ressourceType,
+        'ressource_id' => $ressourceId, // int id
+        'ressource_params' => $ressourceParams, // optional ressource params
+        'mode' => $mode, // string mode
+        'rotation' => $rotation, // int yes/no
+        'show_description' => $showDescription, // int yes/no
+        'mouse_desc_action' => $mouseDescAction, // string action
+        'zoom_into_focus' => $zoomIntoFocus, // int yes/no
+        'color' => $color, // string color
+        'data_page' => array(
+          'page_id' => $pageId, // int id
+          'view_mode' => $viewMode // string mode
+        ),
+        'polyline' => array(
+          'active' => $polylineActive, // int yes/no
+          'color' => $polylineColor, // string color
+          'size' => $polylineSize // int size
+        )
+      );
+      return TRUE;
+    }
+
+    $this->data['markers'] = NULL;
+    return FALSE;
   }
 
   /**
@@ -396,29 +407,29 @@ class output_geomaps extends base_geomaps {
         && !empty($this->data['markers'])) {
       $data = &$this->data['markers'];
 
-      // get data page url
-      if (!empty($this->data['markers']['data_page']['page_id']) &&
-          !empty($this->data['markers']['data_page']['view_mode'])) {
-        $dataPageUrl = $this->getWebLink(
-          $this->data['markers']['data_page']['page_id'], NULL,
-          $this->data['markers']['data_page']['view_mode'],
-          array(
-            'ressource_type' => $this->data['markers']['ressource_type'],
-            'ressource_id' => $this->data['markers']['ressource_id'],
-            'base_kml' => 1
-          ), $this->paramName
-        );
-        $dataPageUrlXML = sprintf(
-          '<data-page url="%s" />'.LF,
-          papaya_strings::escapeHTMLChars($dataPageUrl)
-        );
+      // get markers params
+      $params = array(
+        'ressource_type' => $this->data['markers']['ressource_type'],
+        'ressource_id' => $this->data['markers']['ressource_id'],
+        'base_kml' => 1
+      );
+      if (is_array($this->data['markers']['ressource_params']) &&
+          count($this->data['markers']['ressource_params']) > 0) {
+        $params = array_merge($params, $this->data['markers']['ressource_params']);
       }
+
+      // get data page url
+      $dataPageUrl = $this->getWebLink(
+        $this->data['markers']['data_page']['page_id'], NULL,
+        $this->data['markers']['data_page']['view_mode'],
+        $params, $this->paramName
+      );
 
       // set xml
       $xml = sprintf(
         '<markers mode="%s" rotation="%d" color="%s" zoom-into-focus="%d"'.
         ' show-description="%d" mouse-desc-action="%s">'.LF.
-        $dataPageUrlXML.
+        '<data-page url="%s" />'.LF.
         '<polyline active="%d" color="%s" size="%d" />'.LF.
         '</markers>'.LF,
         $this->data['markers']['mode'],
@@ -427,6 +438,7 @@ class output_geomaps extends base_geomaps {
         $this->data['markers']['zoom_into_focus'],
         $this->data['markers']['show_description'],
         $this->data['markers']['mouse_desc_action'],
+        papaya_strings::escapeHTMLChars($dataPageUrl),
         $this->data['markers']['polyline']['active'],
         $this->data['markers']['polyline']['color'],
         $this->data['markers']['polyline']['size']
@@ -445,8 +457,8 @@ class output_geomaps extends base_geomaps {
     $xml = '';
 
     // depends on base / settings and static data
-    if (!empty($this->data['base']) && !empty($this->data['settings'])
-        && !empty($this->data['static'])) {
+    if (!empty($this->data['base']) && !empty($this->data['settings']) &&
+        !empty($this->data['static'])) {
 
       $imageUrl = $this->getStaticImageUrl();
 
@@ -477,8 +489,8 @@ class output_geomaps extends base_geomaps {
     $url = '';
 
     // depends on base / settings and static data
-    if (!empty($this->data['base']) && !empty($this->data['settings'])
-        && !empty($this->data['static'])) {
+    if (!empty($this->data['base']) && !empty($this->data['settings']) &&
+        !empty($this->data['static'])) {
 
       switch ($this->data['base']['api']['type']) {
       case $this->apiTypeNames[0]: // google
@@ -515,7 +527,7 @@ class output_geomaps extends base_geomaps {
         );
 
         $response = file_get_contents($request);
-        if ($response !== false) {
+        if ($response !== FALSE) {
           $phpObj = unserialize($response);
           $url = $phpObj['Result'];
         }
@@ -548,7 +560,7 @@ class output_geomaps extends base_geomaps {
         $output = ($static === TRUE) ? 'html' : '';
 
         if ($static == TRUE) {
-          $zoom = floor($this->data['settings']['zoom'] / 2) -9;
+          $zoom = floor($this->data['settings']['zoom'] / 2) - 9;
           if ($zoom < 0) {
             $zoom = $zoom * -1;
           }
@@ -604,7 +616,7 @@ class output_geomaps extends base_geomaps {
    * @param boolean $static Use a static context
    * @return string link xml or nothing
    */
-  function getPermaLinkXml($static = FALSE)  {
+  function getPermaLinkXml($static = FALSE) {
     $xml = '';
 
     // depends on base and settings data
@@ -671,12 +683,12 @@ class output_geomaps extends base_geomaps {
    * @param boolean $static Use a static context
    * @return string link xml or nothing
    */
-  function getTripPlannerLinkXml($static = FALSE)  {
+  function getTripPlannerLinkXml($static = FALSE) {
     $xml = '';
 
     // depends on base / settings / markers data
-    if (!empty($this->data['base']) && !empty($this->data['settings'])
-        && !empty($this->data['markers'])) {
+    if (!empty($this->data['base']) && !empty($this->data['settings']) &&
+        !empty($this->data['markers'])) {
       $data = &$this->data['settings']['trip_planner'];
 
       if ($data['active'] == 1 && !empty($data['caption'])) {
@@ -705,8 +717,8 @@ class output_geomaps extends base_geomaps {
     $uri = '';
 
     // depends on base / markers / static data
-    if (!empty($this->data['base']) && !empty($this->data['markers'])
-        && !empty($this->data['static'])) {
+    if (!empty($this->data['base']) && !empty($this->data['markers']) &&
+        !empty($this->data['static'])) {
 
       // load markers
       if (!(is_array($this->markers) && $this->markersCount > 0)) {
@@ -753,7 +765,7 @@ class output_geomaps extends base_geomaps {
               $colorCounter = 0;
             }
           } else {
-           $color = papaya_strings::escapeHTMLChars($dataColor);
+            $color = papaya_strings::escapeHTMLChars($dataColor);
           }
           $marker[] = sprintf('%f,%f,%s%s%s',
             $currentMarker['marker_lat'],
@@ -811,8 +823,8 @@ class output_geomaps extends base_geomaps {
         }
 
         $result = array(
-          'marker_lat' => ($maxLat-$minLat)/2 + $minLat,
-          'marker_lng' => ($maxLng-$minLng)/2 + $minLng
+          'marker_lat' => ($maxLat - $minLat) / 2 + $minLat,
+          'marker_lng' => ($maxLng - $minLng) / 2 + $minLng
         );
       }
     }

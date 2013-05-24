@@ -12,17 +12,16 @@
 * FOR A PARTICULAR PURPOSE.
 *
 * @package module_geomaps
+* @author Martin Kelm <martinkelm@idxsolutions.de>
+* @author Bastian Feder <info@papaya-cms.com> <extensions>
 */
 
-function initMarkers(uniqueid) {
+function addMarkers(url, params) {
   // store var in global context
   if (typeof window.geoMarkers == "undefined") {
     window.geoMarkers = [];
   }
-  geoMarkers[uniqueId] = new Array();
-}
 
-function addMarkers(url, params) {
   xmlDocument = getMarkersXML(url, params);
   if (xmlDocument) {
     parseMarkersXML(xmlDocument);
@@ -30,7 +29,6 @@ function addMarkers(url, params) {
 }
 
 function getMarkersXML(url, params) {
-
   params = params.replace(/&amp;/g, '&');
 
   // xml http request for Mozilla or IE7
@@ -53,7 +51,7 @@ function getMarkersXML(url, params) {
   var xmlData = '';
   if (typeof xmlRequest != "undefined") {
 
-    if (1 == 2) { // for debugging purposes
+    if (2 == 2) { // to support all level seperators
       xmlRequest.open('GET', url+'?'+params, false);
       xmlRequest.send(null);
     } else { // default
@@ -73,6 +71,7 @@ function getMarkersXML(url, params) {
 
 function parseMarkersXML(xmlData) {
   // store var in global context
+  geoMarkers[uniqueId] = new Array();
   var placemarkNodes = xmlData.getElementsByTagName("Placemark");
 
   // tmp vars

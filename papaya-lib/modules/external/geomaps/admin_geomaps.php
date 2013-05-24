@@ -6,13 +6,14 @@
 * @link http://www.idxsolutions.de
 * @licence GNU General Public Licence (GPL) 2 http://www.gnu.org/copyleft/gpl.html
 *
-* You can redistribute and/or modify this script under the terms of the GNU General Public
-* License (GPL) version 2, provided that the copyright and license notes, including these
-* lines, remain unmodified. This script is distributed in the hope that it will be useful, but
-* WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-* FOR A PARTICULAR PURPOSE.
+ * You can redistribute and/or modify this script under the terms of the GNU General
+ * Public License (GPL) version 2, provided that the copyright and license notes,
+ * including these lines, remain unmodified. This script is distributed in the hope that
+ * it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 *
 * @package module_geomaps
+* @author Martin Kelm <martinkelm@idxsolutions.de>
 */
 
 /**
@@ -24,6 +25,7 @@ require_once(dirname(__FILE__).'/base_geomaps.php');
 * Administration backend for geo maps
 *
 * @package module_geomaps
+* @author Martin Kelm <martinkelm@idxsolutions.de>
 */
 class admin_geomaps extends base_geomaps {
 
@@ -217,12 +219,16 @@ class admin_geomaps extends base_geomaps {
         $this->addMsg(MSG_INFO, sprintf(
           $this->_gt('The spatial polygon "%s" for "%s" (%d) has been generated.'),
           md5(sprintf('geomaps_folder_%d', $this->params['folder_id'])),
-          $this->folders[$this->params['folder_id']]['folder_title'], $this->params['folder_id']
+          $this->folders[$this->params['folder_id']]['folder_title'],
+          $this->params['folder_id']
         ));
       } else {
         $this->addMsg(MSG_INFO, sprintf(
-          $this->_gt('An error occured. No spatial polygon for "%s" (%d) has been generated.'),
-          $this->folders[$this->params['folder_id']]['folder_title'], $this->params['folder_id']
+          $this->_gt(
+            'An error occured. No spatial polygon for "%s" (%d) has been generated.'
+          ),
+          $this->folders[$this->params['folder_id']]['folder_title'],
+          $this->params['folder_id']
         ));
       }
     }
@@ -245,12 +251,16 @@ class admin_geomaps extends base_geomaps {
       if (TRUE === $this->generateSpatialPointsByFolders($this->params['folder_id'])) {
         $this->addMsg(MSG_INFO, sprintf(
           $this->_gt('The spatial points for "%s" (%d) has been generated.'),
-          $this->folders[$this->params['folder_id']]['folder_title'], $this->params['folder_id']
+          $this->folders[$this->params['folder_id']]['folder_title'],
+          $this->params['folder_id']
         ));
       } else {
         $this->addMsg(MSG_INFO, sprintf(
-          $this->_gt('An error occured. No spatial points for "%s" (%d) has been generated.'),
-          $this->folders[$this->params['folder_id']]['folder_title'], $this->params['folder_id']
+          $this->_gt(
+            'An error occured. No spatial points for "%s" (%d) has been generated.'
+          ),
+          $this->folders[$this->params['folder_id']]['folder_title'],
+          $this->params['folder_id']
         ));
       }
     }
@@ -559,10 +569,14 @@ class admin_geomaps extends base_geomaps {
       } else {
         $this->addMsg(MSG_INFO, 'No keys added yet.');
       }
-      $text = '<a href="http://www.google.com/apis/maps" target="_blank">Google Maps API Keys</a><br />'.
-      '<a href="http://search.yahooapis.com/webservices/register_application" target="_blank">Yahoo Maps API IDs</a><br />';
-      $result = '<panel title="'.papaya_strings::escapeHTMLChars($this->_gt('Get your keys here')).'">'.
-        '<sheet width="100%" align="center"><text><div style="padding: 0px 5px 0px 5px; ">'.
+      $text = '<a href="http://www.google.com/apis/maps" target="_blank">'.
+        'Google Maps API Keys</a><br />'.
+        '<a href="http://search.yahooapis.com/webservices/register_application" '.
+        'target="_blank">Yahoo Maps API IDs</a><br />';
+      $result = '<panel title="'.
+        papaya_strings::escapeHTMLChars($this->_gt('Get your keys here')).'">'.
+        '<sheet width="100%" align="center"><text>'.
+        '<div style="padding: 0px 5px 0px 5px; ">'.
         $text.'</div></text></sheet></panel>';
       $this->layout->addLeft($result);
       break;
@@ -663,7 +677,7 @@ class admin_geomaps extends base_geomaps {
             ($hasCmdParam && $this->params['cmd'] == 'add_key')
           );
 
-        if (isset($this->params['key_id']) && $this->params['key_id'] > 0 &&
+        if (!empty($this->params['key_id']) && $this->params['key_id'] > 0 &&
             $hasCmdParam && $this->params['cmd'] == 'edit_key') {
           $menubar->addButton('Delete key',
             $this->getLink(array(
@@ -676,8 +690,6 @@ class admin_geomaps extends base_geomaps {
       break;
     default:
       if ($this->module->hasPerm(2, FALSE)) {
-        $spatialFunctions = $this->getOption('spatial_functions', 0);
-
         $menubar->addButton('Add folder',
           $this->getLink(array('cmd' => 'add_folder')),
             'actions-folder-add', '',
@@ -701,10 +713,17 @@ class admin_geomaps extends base_geomaps {
               ($hasCmdParam && $this->params['cmd'] == 'del_folder')
             );
 
-          if ($spatialFunctions == 1 &&
-              isset($this->markers) && count($this->markers) > 0
+          if (isset($this->markers) && count($this->markers) > 0
               && $this->module->hasPerm(5, FALSE)) {
-            $menubar->addSeperator();
+
+            $menubar->addButton('Generate spatial points',
+              $this->getLink(array(
+                  'cmd' => 'generate_spatial_points',
+                  'folder_id' => $this->params['folder_id']
+              )),
+              'actions-database-refresh', '',
+              ($hasCmdParam && $this->params['cmd'] == 'generate_spatial_points')
+            );
 
             $menubar->addButton('Generate spatial polygon',
               $this->getLink(array(
@@ -731,12 +750,11 @@ class admin_geomaps extends base_geomaps {
             && $hasCmdParam && $this->params['cmd'] == 'edit_marker') {
           $toolbar->addButton('Delete marker',
             $this->getLink(array(
-              'cmd' => 'del_marker',
-              'marker_id' => $this->params['marker_id'])
-            ),
-            'actions-tag-delete', '',
-            ($hasCmdParam && $this->params['cmd'] == 'del_marker')
-          );
+                'cmd' => 'del_marker',
+                'marker_id' => $this->params['marker_id'])),
+              'actions-tag-delete', '',
+              ($hasCmdParam && $this->params['cmd'] == 'del_marker')
+            );
         }
       }
 
@@ -757,23 +775,6 @@ class admin_geomaps extends base_geomaps {
           $this->getLink(array('cmd' => 'export_markers')),
           $this->localImages['export']);
       }
-
-      if ($spatialFunctions == 1 &&
-          isset($this->markers) && count($this->markers) > 0 &&
-          $this->module->hasPerm(5, FALSE)) {
-
-        $toolbar->addSeperator();
-
-        $toolbar->addButton('Generate spatial points',
-          $this->getLink(array(
-            'cmd' => 'generate_spatial_points',
-            'folder_id' => $this->params['folder_id']
-          )),
-          'actions-database-refresh', '',
-          ($hasCmdParam && $this->params['cmd'] == 'generate_spatial_points')
-        );
-      }
-
 
       if ($str = $toolbar->getXML()) {
         $this->layout->add(sprintf('<toolbar>%s</toolbar>'.LF, $str));
@@ -1034,8 +1035,8 @@ class admin_geomaps extends base_geomaps {
    */
   function getGenerateSpatialPolygonDialog() {
     include_once(PAPAYA_INCLUDE_PATH.'system/base_msgdialog.php');
-    if (isset($this->params['folder_id']) && $this->params['folder_id'] > 0
-        && $this->folders[$this->params['folder_id']]) {
+    if (isset($this->params['folder_id']) && $this->params['folder_id'] > 0 &&
+        $this->folders[$this->params['folder_id']]) {
 
       $hidden = array(
         'cmd' => $this->params['cmd'],
@@ -1043,8 +1044,11 @@ class admin_geomaps extends base_geomaps {
         'confirmed' => 1
       );
 
-      $msg = sprintf($this->_gt('Do you want to generate a spatial polygon for "%s" (%d)?'),
-        $this->folders[$this->params['folder_id']]['folder_title'], $this->params['folder_id']);
+      $msg = sprintf(
+        $this->_gt('Do you want to generate a spatial polygon for "%s" (%d)?'),
+        $this->folders[$this->params['folder_id']]['folder_title'],
+        $this->params['folder_id']
+      );
 
       $this->dialog = &new base_msgdialog($this, $this->paramName,
         $hidden, $msg, 'question');
@@ -1068,8 +1072,11 @@ class admin_geomaps extends base_geomaps {
         'confirmed' => 1
       );
 
-      $msg = sprintf($this->_gt('Do you want to generate spatial points for "%s" (%d)?'),
-        $this->folders[$this->params['folder_id']]['folder_title'], $this->params['folder_id']);
+      $msg = sprintf(
+        $this->_gt('Do you want to generate spatial points for "%s" (%d)?'),
+        $this->folders[$this->params['folder_id']]['folder_title'],
+        $this->params['folder_id']
+      );
 
       $this->dialog = &new base_msgdialog($this, $this->paramName,
         $hidden, $msg, 'question');
@@ -1274,7 +1281,7 @@ class admin_geomaps extends base_geomaps {
   function getApiScript($type) {
     $apiKey = $this->getDistinctKey($_SERVER['HTTP_HOST'], $type, TRUE);
 
-    if (!empty($apiKey) && !empty($apiKey['key_value']))  {
+    if (!empty($apiKey) && !empty($apiKey['key_value'])) {
       $result = '';
 
       switch($type) {
@@ -1292,8 +1299,10 @@ class admin_geomaps extends base_geomaps {
 
       $result .= sprintf('<script type="text/javascript" src="%sgeomaps.js" />'.LF,
         $this->getOption('scripts_path', '/papaya-script/geomaps/'));
-      $result .= sprintf('<script type="text/javascript"> <![CDATA[ apiType = %d; ]]> </script>'.LF,
-        $type);
+      $result .= sprintf(
+        '<script type="text/javascript"> <![CDATA[ apiType = %d; ]]> </script>'.LF,
+        $type
+      );
 
       return $result;
     }
@@ -1304,7 +1313,8 @@ class admin_geomaps extends base_geomaps {
     include_once(PAPAYA_INCLUDE_PATH.'system/base_msgdialog.php');
     $hidden = array(
       'cmd' => 'del_marker',
-      'marker_id' => (isset($this->params['marker_id'])) ? $this->params['marker_id'] : NULL,
+      'marker_id' => (isset($this->params['marker_id'])) ?
+        $this->params['marker_id'] : NULL,
       'confirm_delete' => 1,
     );
 
@@ -1318,7 +1328,7 @@ class admin_geomaps extends base_geomaps {
   }
 
   function getFoldersList() {
-    $result .= sprintf('<listview width="100%%" title="%s">'.LF,
+    $result = sprintf('<listview width="100%%" title="%s">'.LF,
       $this->_gt('Folders'));
     $result .= '<items>'.LF;
 
@@ -1411,7 +1421,6 @@ class admin_geomaps extends base_geomaps {
     }
     $result .= '</cols>';
 
-
     $result .= '<items>'.LF;
     foreach ($this->markers as $markerId => $marker) {
       if ($this->module->hasPerm(2, FALSE)) {
@@ -1493,7 +1502,7 @@ class admin_geomaps extends base_geomaps {
       }
 
       if (count($toFix) > 0) {
-        foreach($toFix as $data) {
+        foreach ($toFix as $data) {
           $this->databaseUpdateRecord($this->tableMarkers,
             array('marker_sort' => $data[1]), 'marker_id', (int)$data[0]);
         }
@@ -1524,7 +1533,7 @@ class admin_geomaps extends base_geomaps {
       }
       if (count($toFix) > 0) {
         $sort = 0;
-        foreach($toFix as $id) {
+        foreach ($toFix as $id) {
           $this->databaseUpdateRecord($this->tableMarkers,
             array('marker_sort' => $sort), 'marker_id', $id);
           $sort++;
@@ -1665,6 +1674,11 @@ class admin_geomaps extends base_geomaps {
     return FALSE;
   }
 
+  function deleteMarker($markerId) {
+    return $this->databaseDeleteRecord($this->tableMarkers,
+      'marker_id', $markerId);
+  }
+
   function exportMarkersKML($folderTitle, $markers = NULL) {
 
     $markers = (is_array($markers) && count($markers) > 0)
@@ -1732,7 +1746,9 @@ class admin_geomaps extends base_geomaps {
 
           if (count($points) > 0) {
             $this->spatialExtensions->removeSpatialPolygon($folderId);
-            return FALSE !== $this->spatialExtensions->insertSpatialPolygon($folderId, $points);
+            return FALSE !== $this->spatialExtensions->insertSpatialPolygon(
+              $folderId, $points
+            );
           }
           unset($points);
         }

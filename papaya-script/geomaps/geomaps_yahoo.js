@@ -12,6 +12,7 @@
 * FOR A PARTICULAR PURPOSE.
 *
 * @package module_geomaps
+* @author Martin Kelm <martinkelm@idxsolutions.de>
 */
 
 function initYahooMaps(showCoor, zoomControl, panControl, typeControl,
@@ -56,8 +57,8 @@ function initYahooMaps(showCoor, zoomControl, panControl, typeControl,
       yahooMap[uniqueId].addTypeControl();
     }
 
-    if (centerLat > -90 && centerLat < 90
-        && centerLng > -180 && centerLng < 180 && centerZoom > 0) {
+    if (centerLat > -90 && centerLat < 90 &&
+        centerLng > -180 && centerLng < 180 && centerZoom > 0) {
       centerMap(centerLat, centerLng, centerZoom, mapType);
     }
   }
@@ -89,7 +90,8 @@ function setMarker(point, markerIdx) {
     var marker = new YMarker(point);
 
     // set marker with or without description text
-    if (geoMarkers[uniqueId][markerIdx] && geoMarkers[uniqueId][markerIdx][1] &&
+    if (geoMarkers[uniqueId][markerIdx] &&
+        geoMarkers[uniqueId][markerIdx][1] &&
         geoMarkers[uniqueId][markerIdx][1].length > 0) {
 
       if (markerAction == 'click') {

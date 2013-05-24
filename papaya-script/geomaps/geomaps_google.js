@@ -12,6 +12,8 @@
 * FOR A PARTICULAR PURPOSE.
 *
 * @package module_geomaps
+* @author Martin Kelm <martinkelm@idxsolutions.de>
+* @author Bastian Feder <info@papaya-cms.com> <extensions>
 */
 
 /**

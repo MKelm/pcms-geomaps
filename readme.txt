@@ -1,6 +1,6 @@
 *Geo maps modules for papaya CMS 5*
 
-Revision 0.24, 2008-06-01
+Revision 0.26, 2008-08-28
 (c) Martin Kelm <martinkelm@idxsolutions.de>
 
 Support and good fairy:
@@ -22,7 +22,17 @@ GNU General Public Licence (GPL): gpl.txt
 - KML import ...
 - Use xslt parser for KML export?
 
+*Presentation*
+http://www.slideshare.net/kelm/phpug-geo-maps-for-papaya-cms
+
 *Changelog*
+
+_Rev. 0.26 (2009-08-28)
+- Removed delete marker function from connector, deprecated
+- Optional ressource parameters
+- RPC page module option
+- RPC page url connector function
+- A lot of smaller optimizations
 
 _Rev. 0.25 (2009-06-09)_
 - Fixed custom markers mode without markers page
