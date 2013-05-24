@@ -1,10 +1,9 @@
 /* 
 *  Geo maps for papaya CMS 5: Google Maps script 
-*  Author: Martin Kelm, 31.05.2007
+*  Author: Martin Kelm, 03.06.2007
 */
 
 var googleMap = null;
-var googleGeocoder = null;
 
 function initGoogleMaps(showCoor, basicControl, scaleControl, 
 											 typeControl, overviewControl, 
@@ -63,18 +62,6 @@ function centerMap(lat, lng, zoom, mapType) {
 	}
 }
 
-function getAddressPoint(address, text) {
-	if (googleGeocoder == null) {
-		googleGeocoder = new GClientGeocoder();
-	}
-	googleGeocoder.getLatLng(
-		address,
-		function(point) {
-			setMarker(point, text);
-		}
-	);
-}
-
 function getMarkerPoint(lat, long) {
 	return new YGeoPoint(parseFloat(lat), parseFloat(long));
 }
@@ -93,51 +80,23 @@ function setMarker(point, text) {
 }
 
 function rotateMarker(i) {
-	if (markers[i][0] == 2) {
-		var point = new GLatLng(parseFloat(markers[i][2]),
-														parseFloat(markers[i][3]));
-		marker = setMarker(point);
-		if (typeof marker == "object") {
-			googleMap.setCenter(point);
+	var point = new GLatLng(parseFloat(markers[i][2]),
+													parseFloat(markers[i][3]));
+	marker = setMarker(point);
+	if (typeof marker == "object") {
+		googleMap.setCenter(point);
+		marker.openInfoWindowHtml(markers[i][1]);
+		GEvent.addListener(marker, markerAction, function () {
 			marker.openInfoWindowHtml(markers[i][1]);
-			GEvent.addListener(marker, markerAction, function () {
-				marker.openInfoWindowHtml(markers[i][1]);
-			});
-			setTimeout(function() {
-				googleMap.closeInfoWindow();
-				googleMap.removeOverlay(marker);
-				if (i < markers.length-1) {
-					rotateMarker(i+1);
-				} else {
-					rotateMarker(0);
-				}
-			}, markerRotationTime);
-		}
-	} else {
-		if (googleGeocoder == null) {
-			googleGeocoder = new GClientGeocoder();
-		}
-		googleGeocoder.getLatLng(
-			markers[i][2],
-			function(point) {
-				marker = setMarker(point);
-				if (typeof marker == "object") {
-					googleMap.setCenter(point);
-					GEvent.addListener(marker, markerAction, function () {
-						marker.openInfoWindowHtml(markers[i][1]);
-					});
-					marker.openInfoWindowHtml(markers[i][1]);
-					setTimeout(function() {
-						googleMap.closeInfoWindow();
-						googleMap.removeOverlay(marker);
-						if (i < markers.length-1) {
-							rotateMarker(i+1);
-						} else {
-							rotateMarker(0);
-						}
-					}, markerRotationTime);
-				}
+		});
+		setTimeout(function() {
+			googleMap.closeInfoWindow();
+			googleMap.removeOverlay(marker);
+			if (i < markers.length-1) {
+				rotateMarker(i+1);
+			} else {
+				rotateMarker(0);
 			}
-		);
+		}, markerRotationTime);
 	}
 }

@@ -26,7 +26,8 @@ class edmodule_gmaps extends base_module {
   var $permissions = array(
     1 => 'View',
     2 => 'Manage markers',
-    3 => 'Export Markers'
+    3 => 'Export Markers',
+    4 => 'Manage keys'
   );
 
   /**

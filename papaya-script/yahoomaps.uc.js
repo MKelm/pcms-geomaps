@@ -1,6 +1,6 @@
 /* 
 *  Geo maps for papaya CMS 5: Yahoo Maps script 
-*  Author: Martin Kelm, 31.05.2007
+*  Author: Martin Kelm, 03.06.2007
 */
 
 var yahooMap = null;
@@ -9,6 +9,17 @@ function initYahooMaps(showCoor, zoomControl, panControl, typeControl,
 											 centerLat, centerLng, centerZoom, 
 											 mapType, uniqueId) {					 	
 	yahooMap = new YMap(document.getElementById("map_"+uniqueId));
+	if (showCoor) {
+		YEvent.Capture(yahooMap, "click",
+			function(yahooMap, point) {
+				if (point) {
+					document.getElementById("coor_"+uniqueId).innerHTML	= 
+						'Latitude: ' + point.Lat + ' / ' + 'Longitude: ' + point.Lon;
+				}
+			}
+		);
+	}
+		
 	switch (zoomControl) {
 		case 1: 
 			yahooMap.addZoomShort();
@@ -35,11 +46,6 @@ function centerMap(lat, lng, zoom, mapType) {
 	yahooMap.setMapType(mapType);
 }
 
-function getAddressPoint(address, text) {
-	var point = new YGeoPoint(address);
-	setMarker(point, text);
-}
-
 function getMarkerPoint(lat, long) {	
 	return new YGeoPoint(parseFloat(lat), parseFloat(long));
 }
@@ -64,11 +70,8 @@ function setMarker(point, text) {
 }
 
 function rotateMarker(i) {
-	if (markers[i][0] == 2) {
-		var point = new YGeoPoint(markers[i][2], markers[i][3]);
-	} else {
-		var point = new YGeoPoint(markers[i][2]);
-	}
+	var point = new YGeoPoint(markers[i][2], markers[i][3]);
+	
 	marker = setMarker(point);
 	if (typeof marker == "object") {
 		yahooMap.drawZoomAndCenter(point, yahooMap.getZoomLevel());

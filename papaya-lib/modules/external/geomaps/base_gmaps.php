@@ -23,6 +23,7 @@ class base_gmaps extends base_db {
   
   var $tableFolders = '';
   var $tableMarkers = '';
+  var $tableKeys    = '';
  
   var $folders = NULL;
   var $markers = NULL;
@@ -32,6 +33,7 @@ class base_gmaps extends base_db {
   function initialize($folderId = NULL) {
   	$this->tableFolders = PAPAYA_DB_TABLEPREFIX.'_gmaps_folders';
   	$this->tableMarkers = PAPAYA_DB_TABLEPREFIX.'_gmaps_markers';
+  	$this->tableKeys    = PAPAYA_DB_TABLEPREFIX.'_gmaps_keys';
   	$this->loadFolders();
   	if ($folderId !== NULL && $folderId >= 0) {
   		$this->loadMarkers($folderId);
@@ -43,7 +45,7 @@ class base_gmaps extends base_db {
   	if (!$folderId) {
   		$folderId = 0;
   	}
-  	$sql = 'SELECT marker_id, marker_folder, marker_type, marker_title, 
+  	$sql = 'SELECT marker_id, marker_folder, marker_title, 
   	               marker_desc, marker_address, marker_lat, marker_lng
               FROM %s 
              WHERE marker_folder = %d 
@@ -140,16 +142,13 @@ class base_gmaps extends base_db {
   			$result .= sprintf('<name>%s</name>'.LF, $marker['marker_title']);
   			$result .= sprintf('<description>%s</description>'.LF, $description);
 
-				if ($marker['marker_type'] == 1) {
-					$result .= sprintf('<address>%s</address>'.LF,
-					  papaya_strings::escapeHTMLChars($marker['marker_address']));
-				} else {
-					$result .= '<Point>'.LF;
-					$result .= sprintf('<coordinates>%s</coordinates>'.LF,
-						papaya_strings::escapeHTMLChars($marker['marker_lat']).','.
-						papaya_strings::escapeHTMLChars($marker['marker_lng']).',0');	
-				  $result .= '</Point>'.LF;
-				}  			
+				$result .= sprintf('<address>%s</address>'.LF,
+				  papaya_strings::escapeHTMLChars($marker['marker_address']));
+				$result .= '<Point>'.LF;
+				$result .= sprintf('<coordinates>%s</coordinates>'.LF,
+					papaya_strings::escapeHTMLChars($marker['marker_lat']).','.
+					papaya_strings::escapeHTMLChars($marker['marker_lng']).',0');	
+				$result .= '</Point>'.LF;		
 				$result .= '</Placemark>'.LF;
 				$count++;
 		  }

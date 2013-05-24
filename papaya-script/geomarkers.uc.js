@@ -1,6 +1,6 @@
 /* 
 *  Geo maps for papaya CMS 5: Markers script 
-*  Author: Martin Kelm, 31.05.2007
+*  Author: Martin Kelm, 03.06.2007
 */
 
 var markers = null;
@@ -42,19 +42,12 @@ function parseMarkersXML(xmlDocument) {
 	markers = new Array();
 	var placemarkNodes = xmlDocument.getElementsByTagName('Placemark');
 	for (i = 0; i < placemarkNodes.length; i++) {
-		if (placemarkNodes[i].getElementsByTagName('address')[0]) {
-			markers[i] = Array();
-			markers[i][0] = 1;
-			markers[i][1] = placemarkNodes[i].getElementsByTagName('description')[0].firstChild.data;
-			markers[i][2] = placemarkNodes[i].getElementsByTagName('address')[0].firstChild.data;
-		} else {
-			markers[i] = Array();
-			markers[i][0] = 2;
-			markers[i][1] = placemarkNodes[i].getElementsByTagName('description')[0].firstChild.data;
-			var coordinates = placemarkNodes[i].getElementsByTagName('Point')[0].getElementsByTagName('coordinates')[0].firstChild.data.split(",");
-			markers[i][2] = coordinates[0];
-			markers[i][3] = coordinates[1];
-		}
+		markers[i] = Array();
+		markers[i][0] = 2;
+		markers[i][1] = placemarkNodes[i].getElementsByTagName('description')[0].firstChild.data;
+		var coordinates = placemarkNodes[i].getElementsByTagName('Point')[0].getElementsByTagName('coordinates')[0].firstChild.data.split(",");
+		markers[i][2] = coordinates[0];
+		markers[i][3] = coordinates[1];
 	}
 }
 
@@ -68,11 +61,7 @@ function getMarkers(action, mode, setRotationTime) {
 		rotateMarker(0);
 	} else {
 		for (var i = 0; i < markers.length; i++) {
-			if (markers[i][0] == 1) {
-				getAddressPoint(markers[i][2], markers[i][1]);
-			} else {
-				setMarker(getMarkerPoint(markers[i][2], markers[i][3]), markers[i][1]);
-			}
+			setMarker(getMarkerPoint(markers[i][2], markers[i][3]), markers[i][1]);
 		}
 	}
 }

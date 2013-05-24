@@ -1,6 +1,6 @@
 *Geo maps modules for papaya CMS 5*
 
-Revision 0.10, 05-31-2007
+Revision 0.11, 2007-06-03
 Author: Martin Kelm
 E-Mail: martinkelm@idxsolutions.de
 
@@ -29,11 +29,21 @@ GNU General Public Licence (GPL): gpl.txt
 
 *Changelog*
 
+_Rev. 0.11 (2007-06-03)_
+- primary marker data set to coordinates
+- coordinates by address: removed on-demand geocoding (front-end)
+- coordinates by address: added tool in edit formular (back-end)
+- added keys management for api keys / ids (back-end)
+- new database table for keys (host specific)
+- changes in menubar and new toolbar for markers (back-end)
+- combined box modules of each maps type (with dynamic edit fields)
+- removed code overhead in geo maps module for guestbooks
+- some other optimizations and new icons
+
 _Rev. 0.10 (2007-05-31)_
 - js markers handling outsorced to sperate java script file
 - added yahoo maps box modules and new java script file
-- renaming into geo maps module, 
-to prevent naming conflicts with other geo maps services
+- renaming into geo maps module, to prevent naming conflicts
 - added sort functions for markers
 - improved back-end messages
 
