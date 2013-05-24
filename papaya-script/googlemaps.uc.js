@@ -63,7 +63,7 @@ function centerMap(lat, lng, zoom, mapType) {
 }
 
 function getMarkerPoint(lat, long) {
-	return new YGeoPoint(parseFloat(lat), parseFloat(long));
+	return new GLatLng(parseFloat(lat), parseFloat(long));
 }
 
 function setMarker(point, text) {

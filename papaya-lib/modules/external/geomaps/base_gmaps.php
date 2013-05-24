@@ -136,7 +136,7 @@ class base_gmaps extends base_db {
   			$desc = $marker['marker_desc'];
   			$desc = papaya_strings::ensureUTF8($desc);
   			$desc = $this->getXHTMLString($desc, TRUE);
-  			$description = '<div class="googleMapDesc">'.$desc.'</div>';
+  			$description = '<div class="geoMapDesc">'.$desc.'</div>';
   			
   			$result .= sprintf('<Placemark id="%s">'.LF, $this->paramName.$count);
   			$result .= sprintf('<name>%s</name>'.LF, $marker['marker_title']);

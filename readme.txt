@@ -1,9 +1,14 @@
 *Geo maps modules for papaya CMS 5*
 
-Revision 0.11, 2007-06-03
+Revision 0.12, 2007-06-21
 Author: Martin Kelm
 E-Mail: martinkelm@idxsolutions.de
 
+
+*Get markers data*
+You have to create one markers data page in minimum which uses the
+"gmaps_markers.xsl" template. You can use the page's id for any map box
+later.
 
 *Hint for Google Maps*
 You should use this unload event in your body element:
@@ -11,15 +16,22 @@ You should use this unload event in your body element:
 
 *Geo maps box modules for guestbooks (requirements)*
 - Guestbook module 1.1: http://www.idxsolutions.de/dl-guestbook
-- GeoIP databases (extract to "/papaya-lib/external/geoip/"):
+- Current GeoIP databases (extract to "/papaya-lib/external/geoip/"):
 http://www.maxmind.com/download/geoip/database/GeoIP.dat.gz (~1mb)
 http://www.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz (~17mb)
 
-*CSS Example*
+*Template*
+Move "gmaps_markers.xsl" to your template folder.
+
+*CSS*
+Add this div classes to your css stylesheet (you can modify their content):
 div.geoMap {
 	width: 640px; 
 	height: 480px; 
 	border: 1px solid black;
+}
+div.geoMapDesc {
+	width: 350px;
 }
 
 *License*
@@ -28,6 +40,11 @@ GNU General Public Licence (GPL): gpl.txt
 
 
 *Changelog*
+
+_Rev. 0.12 (2007-06-21)_
+- added marker data xsl template
+- Google Maps js syntax correction
+- changed css class of marker descriptions to "geoMapDesc"
 
 _Rev. 0.11 (2007-06-03)_
 - primary marker data set to coordinates
