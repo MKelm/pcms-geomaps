@@ -69,7 +69,9 @@ function centerMap(lat, lng, zoom, mapType) {
   if (point) {
     yahooMap[uniqueId].drawZoomAndCenter(point, zoom);
   }
-  yahooMap[uniqueId].setMapType(mapType);
+  if (mapType) {
+    yahooMap[uniqueId].setMapType(mapType);
+  }
 }
 
 function getMarkerPoint(lat, lng) {

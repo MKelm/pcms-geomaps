@@ -49,12 +49,12 @@ class connector_geomaps extends base_plugin {
    * @return static reference $obj base_geomaps
    */
   function &getBaseObject() {
-    static $obj;
-    if (!isset($obj) && !is_object($obj)) {
+    static $baseGeoMaps;
+    if (!isset($baseGeoMaps) && !is_object($baseGeoMaps)) {
       include_once(dirname(__FILE__).'/base_geomaps.php');
-      $obj = new base_geomaps();
+      $baseGeoMaps = new base_geomaps();
     }
-    return $obj;
+    return $baseGeoMaps;
   }
 
   /**
@@ -92,6 +92,21 @@ class connector_geomaps extends base_plugin {
     $baseObj = &$this->getBaseObject();
     return $baseObj->setMarker($folderId, $title, $lat, $lng, $description,
       $street, $house, $zip, $city, $country, TRUE, NULL);
+  }
+
+  /**
+   * Get a single marker by id
+   *
+   * @param integer $markerId
+   * @param integer $folderId Additional folder id condition
+   * @return integer|NULL marker id or nothing
+   */
+  function getMarkerById($markerId, $folderId = TRUE) {
+    $baseObj = &$this->getBaseObject();
+    if ($baseObj->loadMarker($markerId, TRUE, $folderId)) {
+      return $baseObj->markers[$markerId];
+    }
+    return NULL;
   }
 
 }

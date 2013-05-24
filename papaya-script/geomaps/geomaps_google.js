@@ -123,7 +123,9 @@ function centerMap(lat, lng, zoom, mapType) {
   if (point) {
     googleMaps[uniqueId].setCenter(point, zoom);
   }
-  googleMaps[uniqueId].setMapType(mapType);
+  if (mapType) {
+    googleMaps[uniqueId].setMapType(mapType);
+  }
 }
 
 function getMarkerPoint(lat, lng) {

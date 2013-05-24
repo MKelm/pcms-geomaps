@@ -99,7 +99,7 @@ class output_geomaps extends base_geomaps {
   function setBaseData($apiType, $coorMode, $noScriptText, $linksTarget) {
 
     $apiKey = $this->getDistinctKey($_SERVER['HTTP_HOST'], $apiType, TRUE);
-    if ($apiKey['key_value'] !== FALSE
+    if (!empty($apiKey['key_value'])
         && isset($this->apiTypeNames[$apiType])) {
 
       $this->data['base'] = array(
@@ -109,7 +109,8 @@ class output_geomaps extends base_geomaps {
           'type' => $this->apiTypeNames[$apiType], // string type name
         ),
         'coor_mode' => $coorMode, // int yes/no
-        'scripts_path' => $this->getOption('scripts_path', '/'), // string
+        'scripts_path' => $this->getOption('scripts_path',
+                            '/papaya-script/geomaps/'), // string
         'no_script_text' => $noScriptText, // string text
         'links_target' => $linksTarget // string
       );

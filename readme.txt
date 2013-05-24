@@ -1,6 +1,6 @@
 *Geo maps modules for papaya CMS 5*
 
-Revision 0.22, 2008-11-13
+Revision 0.23, 2008-11-15
 
 Authors:
 Martin Kelm <martinkelm@idxsolutions.de>
@@ -12,6 +12,7 @@ geomaps@idxsolutions.de
 *Templates*
 - "box_geomaps.xsl": use a text/html output filter
 - "geomaps_markers.xsl": use a text/xml output filter
+- "geomaps_demo.xsl": use a text/html output filter
 
 *License*
 GNU General Public Licence (GPL): gpl.txt
@@ -25,6 +26,12 @@ GNU General Public Licence (GPL): gpl.txt
 
 *Changelog*
 
+_Rev. 0.23 (2008-11-15)_
+- Added antoher connector method to get a marker by id
+- Some smaller java script improvements
+- Added demo page xsl to show Geo Maps boxes
+- Reimplemented lost changes from rev. 0.21
+
 _Rev. 0.22 (2008-11-13)_
 - Added connector with two methods (folders list, add marker)
 - Improved method to save new markers and fixed zip code
@@ -34,7 +41,7 @@ _Rev. 0.22 (2008-11-13)_
 _Rev. 0.21 (2008-11-10)_
 - Fixed PHP4 compatibility
 - Fixed papaya CMS RC1 compatibility
-- Some smaller imprevements
+- Some smaller improvements
 
 _Rev. 0.20 (2008-11-10)_
 - Refactored output again to get a better xml structure and options handling

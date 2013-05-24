@@ -71,8 +71,10 @@ function getCoordinatesByGoogleMaps(address, latDlgId, lngDlgId) {
   googleGeocoder.getLatLng(
     address,
     function(point) {
-      var pointY = point.y;
-      var pointX = point.x;
+      if (typeof point != "undefined" && point != null) {
+        var pointY = point.y;
+        var pointX = point.x;
+      }
 
       if (pointY != "undefined" && pointY > 0 &&
           pointX != "undefined" && pointX > 0) {
