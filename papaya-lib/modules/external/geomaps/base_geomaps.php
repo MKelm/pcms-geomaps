@@ -2,7 +2,7 @@
 /**
 * Basic class for Geo Maps
 *
-* @copyright 2007-2008 by Martin Kelm - All rights reserved.
+* @copyright 2007-2009 by Martin Kelm - All rights reserved.
 * @link http://www.idxsolutions.de
 * @licence GNU General Public Licence (GPL) 2 http://www.gnu.org/copyleft/gpl.html
 *
@@ -13,7 +13,6 @@
 * FOR A PARTICULAR PURPOSE.
 *
 * @package module_geomaps
-* @author Martin Kelm <martinkelm@idxsolutions.de>
 */
 
 /**
@@ -25,7 +24,6 @@ require_once(PAPAYA_INCLUDE_PATH.'system/sys_base_db.php');
 * Basic class for Geo Maps
 *
 * @package module_geomaps
-* @author Martin Kelm <martinkelm@idxsolutions.de>
 */
 class base_geomaps extends base_db {
 
@@ -49,6 +47,13 @@ class base_geomaps extends base_db {
    * @var string $tableKeys
    */
   var $tableKeys = NULL;
+
+  /**
+   * Database table to get dynamic image modules.
+   *
+   * @var string $tableDynImages
+   */
+  var $tableDynImages = PAPAYA_DB_TBL_IMAGES;
 
   /**
    * Folders list
@@ -100,6 +105,13 @@ class base_geomaps extends base_db {
   var $apiTypeTitles = NULL;
 
   /**
+   * An object to use mysql spatial extensions.
+   *
+   * @var object $spatialExtensions base_spatial_extensions
+   */
+  var $spatialExtensions = NULL;
+
+  /**;
    * Main constructor to set table names
    */
   function __construct() {
@@ -135,6 +147,42 @@ class base_geomaps extends base_db {
    */
   function base_geomaps() {
     $this->__construct();
+  }
+
+  /**
+   * Initializes a new spatial extensions object to use mysql spatial extensions for
+   * point validations.
+   *
+   * @return boolean initialized?
+   */
+  function initSpatialExtensions() {
+    if (!(isset($this->spatialExtensions) && is_object($this->spatialExtensions))) {
+      if ($this->getOption('spatial_functions', 0) == 1) {
+        include_once(dirname(__FILE__).'/base_spatial_extensions.php');
+        $this->spatialExtensions = &new base_spatial_extensions();
+        if (isset($this->spatialExtensions) && is_object($this->spatialExtensions)) {
+          return TRUE;
+        }
+      }
+    }
+    return FALSE;
+  }
+
+  /**
+   * Uses coordinates to validate this position inside of a given polygon.
+   *
+   * @param integer $folderId unique folder id
+   * @param float $latitude i.e. 49.488155742041045
+   * @param float $longitude i.e. 8.465939998495742
+   * @return boolean point is within polygon
+   */
+  function checkSpatialPointInPolygon($folderId, $latitude, $longitude) {
+    if ($this->initSpatialExtensions() === TRUE) {
+      return $this->spatialExtensions->checkSpatialPointInPolygon(
+        $folderId, $latitude, $longitude
+      );
+    }
+    return FALSE;
   }
 
   /**
@@ -239,7 +287,7 @@ class base_geomaps extends base_db {
    */
   function loadFolders() {
     $this->folders = array();
-    $sql = "SELECT folder_id, folder_title
+    $sql = "SELECT folder_id, folder_title, folder_marker_icon
               FROM %s
              ORDER BY folder_title ASC";
     $params = array($this->tableFolders);
@@ -267,7 +315,7 @@ class base_geomaps extends base_db {
     if ($useCache === TRUE && !empty($this->folders[$folderId])) {
       return TRUE;
     }
-    $sql = "SELECT folder_id, folder_title
+    $sql = "SELECT folder_id, folder_title, folder_marker_icon
               FROM %s
              WHERE folder_id = %d";
     $params = array($this->tableFolders, $folderId);
@@ -304,17 +352,18 @@ class base_geomaps extends base_db {
    * @param string $title Title
    * @param integer $lat Latitude
    * @param integer $lng Longitude
-   * @param string $description Description (optional)
-   * @param string $street Street (optional)
-   * @param string $house House number (optional)
-   * @param string $zip ZIP code (optional)
-   * @param string $city City name (optional)
-   * @param string $country Country name (optional)
-   * @param boolean $new Set a new marker (optional)
-   * @param integer $existingId Existing marker id (optional)
+   * @param string $icon Icon image to show on map
+   * @param string $description Description
+   * @param string $street Street
+   * @param string $house House number
+   * @param string $zip ZIP code
+   * @param string $city City name
+   * @param string $country Country name
+   * @param boolean $new Set a new marker
+   * @param integer $existingId Existing marker id
    * @return boolean|integer Error status FALSE or marker id
    */
-  function setMarker($folderId, $title, $lat, $lng,
+  function setMarker($folderId, $title, $lat, $lng, $icon = NULL,
                      $description = NULL, $street = NULL, $house = NULL,
                      $zip = NULL, $city = NULL, $country = NULL,
                      $new = TRUE, $existingId = NULL) {
@@ -322,6 +371,7 @@ class base_geomaps extends base_db {
     $data = array(
       'marker_folder' => $folderId,
       'marker_title' => $title,
+      'marker_icon' => $icon,
       'marker_desc' => $description,
       'marker_addr_street' => $street,
       'marker_addr_house' => $house,
@@ -346,20 +396,40 @@ class base_geomaps extends base_db {
     return FALSE;
   }
 
+  /* Deletes a single marker.
+   *
+   * @param integer $markerId
+   * @return boolean status
+   */
+  function deleteMarker($markerId) {
+    return $this->databaseDeleteRecord($this->tableMarkers,
+      'marker_id', $markerId);
+  }
+
   /**
    * Load a list of markers by folder id and get the absolute amount
    *
    * @param integer $folderId
    * @return boolean status
    */
-  function loadMarkers($folderId, $limit = NULL, $offset = NULL) {
+  function loadMarkers($folderId, $limit = NULL, $offset = NULL, $markerIds = NULL) {
+    if (!empty($markerIds) && !is_array($markerIds)) {
+      $markerIds = array($markerIds);
+    }
+
+    if (is_array($markerIds) && count($markerIds) > 0) {
+      $markersCond = ' AND '.$this->databaseGetSQLCondition('marker_id', $markerIds);
+    } else {
+      $markersCond = '';
+    }
+
     $sql = "SELECT marker_id, marker_folder,
-                   marker_title, marker_desc,
+                   marker_title, marker_desc, marker_icon,
                    marker_addr_street, marker_addr_house, marker_addr_zip,
                    marker_addr_city, marker_addr_country,
                    marker_lat, marker_lng
               FROM %s
-             WHERE marker_folder = %d
+             WHERE marker_folder = %d$markersCond
              ORDER BY marker_sort ASC";
     $params = array($this->tableMarkers, $folderId);
 
@@ -367,7 +437,17 @@ class base_geomaps extends base_db {
       $this->markers = array();
       $this->markersCount = 0;
 
+      if (empty($this->folders[$folderId])) {
+        // load folder icon image data if available
+        $this->loadFolder($folderId, TRUE);
+      }
       while ($row = $res->fetchRow(DB_FETCHMODE_ASSOC)) {
+        // check if an icon image has been set ...
+        if (empty($row['marker_icon']) && !empty($this->folders[$folderId])
+            && !empty($this->folders[$folderId]['folder_marker_icon'])) {
+          // ... or use folder icon image data instead if available
+          $row['marker_icon'] = $this->folders[$folderId]['folder_marker_icon'];
+        }
         $this->markers[$row['marker_id']] = $row;
       }
       $this->markersCount = count($this->markers);
@@ -375,7 +455,38 @@ class base_geomaps extends base_db {
         return TRUE;
       }
     }
+
     return FALSE;
+  }
+
+  function decorateMarkerIcons($dynamicImageId) {
+
+    if ($this->markersCount > 0 && !empty($dynamicImageId)) {
+
+      $sql = "SELECT image_ident
+                FROM %s
+               WHERE image_id = %d";
+      $params = array($this->tableDynImages, $dynamicImageId);
+
+      if ($res = $this->databaseQueryFmt($sql, $params)) {
+        if ($imageIdent = $res->fetchField()) {
+          $iconImageIds = array();
+
+          // replace marker images
+          foreach ($this->markers as $markerId => $marker) {
+            if (!empty($marker['marker_icon']) && strlen($marker['marker_icon']) == 32) {
+
+              if (!isset($iconImageIdsTo[$marker['marker_icon']])) {
+                $dynImage = sprintf('%s.image.png?img[image_guid]=%s',
+                  $imageIdent, $marker['marker_icon']);
+                $iconImageIdsTo[$marker['marker_icon']] = $this->getAbsoluteURL($dynImage);
+              }
+              $this->markers[$markerId]['marker_icon'] = $iconImageIdsTo[$marker['marker_icon']];
+            }
+          }
+        }
+      }
+    }
   }
 
   /**
@@ -391,7 +502,7 @@ class base_geomaps extends base_db {
       return TRUE;
     }
     $sql = "SELECT marker_id, marker_folder,
-                   marker_title, marker_desc,
+                   marker_title, marker_desc, marker_icon,
                    marker_addr_street, marker_addr_house, marker_addr_zip,
                    marker_addr_city, marker_addr_country,
                    marker_lat, marker_lng
@@ -459,8 +570,39 @@ class base_geomaps extends base_db {
           );
         }
 
-        // at a style reference (for google maps compatible kml)
-        if (!is_null($styleUrl)) {
+        // at a style reference (for google maps compatible kml and custom icons)
+        if (!empty($marker['marker_icon'])) {
+          include_once(PAPAYA_INCLUDE_PATH.'system/base_mediadb.php');
+          $mediaDB = base_mediadb::getInstance();
+
+          if (preg_match('#^[a-z\d]{32}$#', $marker['marker_icon']) &&
+              file_exists($mediaDB->getFileName($marker['marker_icon']))) {
+            $iconFile = $this->getAbsoluteURL($this->getWebMediaLink($marker['marker_icon'], 'media'));
+          } elseif (file_exists(getenv('DOCUMENT_ROOT').'/'.$marker['marker_icon'])) {
+            $iconFile = $this->getAbsoluteURL($marker['marker_icon']);
+          } elseif (checkit::isHTTPX($marker['marker_icon'], TRUE)) {
+            $iconFile = $marker['marker_icon'];
+          }
+
+          $iconSize = @getimagesize($iconFile);
+          if (!empty($iconFile) && !empty($iconSize[0]) && !empty($iconSize[1])) {
+
+            $result .= sprintf('<Style id="customPlacemark%d">'.LF.
+                               '<IconStyle>'.LF.
+                               '<Icon>'.LF.
+                               '<href>%s</href>'.LF.
+                               '<size x="%d" y="%d" xunits="pixels" yunits="pixels"/>'.LF.
+                               '</Icon>'.LF.
+                               '</IconStyle>'.LF.
+                               '</Style>'.LF,
+              $key,
+              $iconFile,
+              $iconSize[0], $iconSize[1]
+            );
+            $result .= sprintf('<styleUrl>customPlacemark%d</styleUrl>'.LF, $key);
+          }
+
+        } elseif (!is_null($styleUrl)) {
           $result .= sprintf('<styleUrl>%s</styleUrl>'.LF, $styleUrl);
         }
 

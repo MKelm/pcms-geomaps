@@ -3,6 +3,7 @@
 <fields>
 <field name="folder_id" type="integer" size="4" null="no" autoinc="yes"/>
 <field name="folder_title" type="string" size="200" null="no"/>
+<field name="folder_marker_icon" type="string" size="32" null="yes" />
 </fields>
 <keys>
 <primary-key><field>folder_id</field></primary-key>

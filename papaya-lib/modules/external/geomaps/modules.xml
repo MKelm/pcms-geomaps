@@ -8,6 +8,7 @@
     <module type="page" guid="5068a7d52a428b6e83f86a83d89e0210" name="Geo maps markers data" class="content_geomaps_markers" file="content_geomaps_markers.php">Data of markers for XML-HTTP requests and KML output.</module>
     <module type="connector" guid="aa51f106beffab7ed130cc00c28c80f9" name="Geo maps connector" class="connector_geomaps" file="connector_geomaps.php">Connector interface for other modules.</module>
     <module type="admin" guid="630cd0c01fd9044826e95e181c5a27d2" name="Geo maps" class="edmodule_geomaps" file="edmodule_geomaps.php" glyph="geomaps.png">Manage markers and export to KML files.</module>
+    <module type="image" guid="561cfdb2b423621bbcdf5eed2bf273d2" name="Dynamic Icon Image" class="image_geomaps_icon" file="image_geomaps_icon.php">Decorate marker icons, i.e. to add an anchor.</module>
   </modules>
   <tables>
     <table name="geomaps_markers"/>

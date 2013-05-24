@@ -1,7 +1,7 @@
 /**
 * Geo maps for papaya CMS 5: Google Maps script
 *
-* @copyright 2007 by Martin Kelm - All rights reserved.
+* @copyright 2007-2009 by Martin Kelm - All rights reserved.
 * @link http://www.idxsolutions.de
 * @licence GNU General Public Licence (GPL) 2 http://www.gnu.org/copyleft/gpl.html
 *
@@ -12,8 +12,6 @@
 * FOR A PARTICULAR PURPOSE.
 *
 * @package module_geomaps
-* @author Martin Kelm <martinkelm@idxsolutions.de>
-* @author Bastian Feder <info@papaya-cms.com> <extensions>
 */
 
 /**
@@ -91,11 +89,14 @@ function initGoogleMaps(showCoor, basicControl, scaleControl,
 
       // observe mouse scrolling
       GMap2.prototype.wheelZoom = function(event) {
-        if(event.cancelable) event.preventDefault();
-        if((event.detail || -event.wheelDelta) < 0)
+        if (event.cancelable) {
+          event.preventDefault();
+        }
+        if ((event.detail || -event.wheelDelta) < 0) {
           googleMap.zoomIn();
-        else
+        } else {
           googleMap.zoomOut();
+        }
         return false;
       }
       GEvent.addDomListener(mapElement, "DOMMouseScroll", googleMap.wheelZoom);
@@ -116,12 +117,16 @@ function initGoogleMaps(showCoor, basicControl, scaleControl,
  * @param float lng longitude of the center point
  * @param integer zoom zoom level of the map
  * @param object mapType which type of map shall be displayed
+ * @param boolean pan use pan / smooth animation to center
  */
-function centerMap(lat, lng, zoom, mapType) {
-  var point = new GLatLng(parseFloat(lat),
-                          parseFloat(lng));
-  if (point) {
+function centerMap(lat, lng, zoom, mapType, pan) {
+  var point = new GLatLng(parseFloat(lat), parseFloat(lng));
+  if (point && zoom) {
     googleMaps[uniqueId].setCenter(point, zoom);
+  } else if (point && pan) {
+    googleMaps[uniqueId].panTo(point);
+  } else if (point) {
+    googleMaps[uniqueId].setCenter(point);
   }
   if (mapType) {
     googleMaps[uniqueId].setMapType(mapType);
@@ -132,15 +137,39 @@ function getMarkerPoint(lat, lng) {
   return new GLatLng(parseFloat(lat), parseFloat(lng));
 }
 
-function setMarker(point, text, color) {
-  if (typeof point != "undefined") {
+function setMarker(point, markerIdx) {
+  if (!point) {
+    var point = new GLatLng(parseFloat(geoMarkers[uniqueId][markerIdx][2]),
+                            parseFloat(geoMarkers[uniqueId][markerIdx][3]));
+  }
 
-    //var marker = new GMarker(point, {icon:icon?});
-    var marker = new GMarker(point);
+  if (point) {
+    // set marker with or without icon image
+    if (geoMarkers[uniqueId][markerIdx][4]
+        && geoMarkers[uniqueId][markerIdx][4].length == 3) {
 
-    if (typeof text != "undefined" && text.length > 0) {
+      var new_icon = new GIcon();
+      new_icon.image = geoMarkers[uniqueId][markerIdx][4][0];
+      // todo get dynamic sizes
+      var iw = geoMarkers[uniqueId][markerIdx][4][1];
+      var ih = geoMarkers[uniqueId][markerIdx][4][2];
+
+      new_icon.size = new GSize(iw, ih);
+      new_icon.iconAnchor = new GPoint(iw/2,ih);
+      new_icon.infoWindowAnchor = new GPoint(iw/2,ih/2);
+
+      var marker = new GMarker(point, { icon:new_icon, zIndexProcess:markerZIndexProcessEvent });
+    } else {
+      var marker = new GMarker(point, { zIndexProcess:markerZIndexProcessEvent });
+    }
+
+    // set description text
+    if (geoMarkers[uniqueId][markerIdx][1]
+        && geoMarkers[uniqueId][markerIdx][1].length > 0) {
+
       GEvent.addListener(marker, markerAction, function () {
-        marker.openInfoWindowHtml(text);
+        markerListenerEvent(markerIdx);
+        marker.openInfoWindowHtml(geoMarkers[uniqueId][markerIdx][1]);
       });
     }
     googleMaps[uniqueId].addOverlay(marker);
@@ -148,21 +177,26 @@ function setMarker(point, text, color) {
   }
 }
 
+function markerZIndexProcessEvent(marker, b) {
+  // i.e. inverse z-index
+  //return -1 * GOverlay.getZIndex(marker.getPoint().lat());
+  return 1; // by order
+}
+
+function markerListenerEvent(markerIdx) { }
+
 function rotateMarker(i) {
-  var point = new GLatLng(parseFloat(markers[i][2]),
-                          parseFloat(markers[i][3]));
-  var marker = null;
-  if (typeof markers[i][1] != "undefined") {
-    marker = setMarker(point, markers[i][1]);
-  } else {
-    marker = setMarker(point);
-  }
-  if (typeof marker  == "object") {
+  var point = new GLatLng(parseFloat(geoMarkers[uniqueId][i][2]),
+                          parseFloat(geoMarkers[uniqueId][i][3]));
+  geoMarkers[uniqueId][i][5] = setMarker(point, i);
+
+  if (typeof geoMarkers[uniqueId][i][5]  == "object") {
     googleMaps[uniqueId].setCenter(point);
     setTimeout(function() {
       googleMaps[uniqueId].closeInfoWindow();
-      googleMaps[uniqueId].removeOverlay(marker);
-      if (i < markers.length-1) {
+      googleMaps[uniqueId].removeOverlay(geoMarkers[uniqueId][i][5]);
+      geoMarkers[uniqueId][i][5] = null;
+      if (i < geoMarkers[uniqueId].length-1) {
         rotateMarker(i+1);
       } else {
         rotateMarker(0);
@@ -173,8 +207,8 @@ function rotateMarker(i) {
 
 function setPolyline(color, width) {
   var points = new Array();
-  for (i = 0; i < markers.length; i++) {
-    points[i] = new GLatLng(markers[i][2], markers[i][3]);
+  for (i = 0; i < geoMarkers[uniqueId].length; i++) {
+    points[i] = new GLatLng(geoMarkers[uniqueId][i][2], geoMarkers[uniqueId][i][3]);
   }
   var colorValues = new Object;
   colorValues['orange'] = '#FF7D00';
@@ -237,13 +271,13 @@ function zoomIntoFocus(marker) {
   return 1;
 }
 
-function coorModeAction(x, y) {
+function coorModeAction(lng, lat) {
   if (document.getElementById) {
     var coorElement = document.getElementById("coor_"+uniqueId);
   } else if (document.all) {
     var coorElement = document.all["coor_"+uniqueId];
   }
   if (typeof coorElement != "undefined") {
-    coorElement.innerHTML = 'Latitude: '+y+' / '+'Longitude: '+x;
+    coorElement.innerHTML = 'Latitude: '+lat+' / '+'Longitude: '+lng;
   }
 }

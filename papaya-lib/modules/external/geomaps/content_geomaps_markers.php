@@ -2,7 +2,7 @@
 /**
 * Marker data KML for xml http requests or downloads
 *
-* @copyright 2007 by Martin Kelm - All rights reserved.
+* @copyright 2007-2009 by Martin Kelm - All rights reserved.
 * @link http://www.idxsolutions.de
 * @licence GNU General Public Licence (GPL) 2 http://www.gnu.org/copyleft/gpl.html
 *
@@ -13,7 +13,6 @@
 * FOR A PARTICULAR PURPOSE.
 *
 * @package module_geomaps
-* @author Martin Kelm <martinkelm@idxsolutions.de>
 */
 
 /**
@@ -25,7 +24,6 @@ require_once(PAPAYA_INCLUDE_PATH.'system/base_content.php');
 * Marker data KML for xml http requests or downloads
 *
 * @package module_geomaps
-* @author Martin Kelm <martinkelm@idxsolutions.de>
 */
 class content_geomaps_markers extends base_content {
 
@@ -34,17 +32,27 @@ class content_geomaps_markers extends base_content {
   var $cacheable = TRUE;
 
   var $editFields = array(
-    'default_folder' => array('Default Folder', 'isNum', TRUE,
-      'function', 'callbackFoldersList'),
-    'folder_by_parameter' => array('Folder By Parameter', 'isNum',
-      TRUE, 'combo', array(0 => 'no', 1 => 'yes'), NULL, 1)
+    'ressource_by_parameter' => array('Ressource By Parameter', 'isNum',
+      TRUE, 'combo', array(0 => 'no', 1 => 'yes'),
+      'The default ressource type is a folder.', 1),
+    'default_folder_id' => array('Default folder', 'isNum', TRUE, 'function',
+      'callbackFoldersList'),
+    'Icon Decoration',
+    'decoration_image' => array('Dynamic Image', 'isNum', TRUE, 'function',
+      'callbackDynamicImages')
   );
 
   /**
-   * Get cache identifier related to given folder id.
+   * Get cache identifier related to given parameters.
    */
   function getCacheId() {
-    return md5('_'.@$this->params['folder_id'].'_'.@$this->params['base_kml']);
+    return md5('_'.
+      ((isset($this->params['ressource_type'])) ? $this->params['ressource_type'] : '').'_'.
+      ((isset($this->params['ressource_id'])) ? $this->params['ressource_id'] : '').'_'.
+      ((isset($this->params['ressource_lat'])) ? $this->params['ressource_lat'] : '').'_'.
+      ((isset($this->params['ressource_lng'])) ? $this->params['ressource_lng'] : '').'_'.
+      ((isset($this->params['base_kml'])) ? $this->params['base_kml'] : '')
+    );
   }
 
   /**
@@ -71,17 +79,6 @@ class content_geomaps_markers extends base_content {
   }
 
   /**
-  * Callback function to get folders
-  */
-  function callbackViewModesList($name, $element, $data) {
-    if ($this->initOutputObject() === TRUE) {
-      return $this->outputObj->getViewModesComboBox($name, $element, $data,
-        $this->paramName);
-    }
-    return '';
-  }
-
-  /**
    * Callback function to get combo box with folders.
    *
    * @param string $name element name
@@ -92,6 +89,22 @@ class content_geomaps_markers extends base_content {
   function callbackFoldersList($name, $element, $data) {
     if ($this->initOutputObject() === TRUE) {
       return $this->outputObj->getFoldersComboBox($name, $element, $data,
+        $this->paramName);
+    }
+    return '';
+  }
+
+  /**
+   * Callback function to get combo box with dynamic image modules.
+   *
+   * @param string $name element name
+   * @param $element
+   * @param integer $data folder id
+   * @return string xml
+   */
+  function callbackDynamicImages($name, $element, $data) {
+    if ($this->initOutputObject() === TRUE) {
+      return $this->outputObj->getDynamicImagesComboBox($name, $element, $data,
         $this->paramName);
     }
     return '';
@@ -111,12 +124,31 @@ class content_geomaps_markers extends base_content {
         $this->setDefaultData();
       }
 
-      // load makers of specified folder
-      if ($this->data['folder_by_parameter'] == 1 &&
-          isset($this->params['folder_id']) && $this->params['folder_id'] >= 0) {
-        $this->outputObj->loadMarkers($this->params['folder_id']);
-      } else {
-        $this->outputObj->loadMarkers($this->data['default_folder']);
+      // load makers of specified folder or use other ressources to get markers data
+       // you can implement more ressources (i.e. surfergroup) here
+      $ressourceType = isset($this->params['ressource_type'])
+        ? $this->params['ressource_type'] : '';
+      $ressourceId = isset($this->params['ressource_id'])
+        ? $this->params['ressource_id'] : '';
+      switch ($ressourceType) {
+      case 'spatial_polygon':
+        if (!empty($ressourceId)
+            && !empty($this->params['ressource_lat'])
+            && !empty($this->params['ressource_lng'])) {
+          $this->loadMarkerInPolygon(
+            $ressourceId, // folder id
+            $this->params['ressource_lat'],
+            $this->params['ressource_lng']
+          );
+        }
+        break;
+      case 'folder':
+      default:
+        if (!($this->data['ressource_by_parameter'] == 1 && $ressourceId >= 0)) {
+          $ressourceId = $this->data['default_folder_id'];
+        }
+        $this->outputObj->loadMarkers($ressourceId);
+        $this->outputObj->decorateMarkerIcons($this->data['decoration_image']);
       }
 
       // show markers xml if any exists
@@ -136,6 +168,33 @@ class content_geomaps_markers extends base_content {
     }
 
     return $xml;
+  }
+
+  /**
+   * Loads a marker position if it is the point is within a spatial polygon id.
+   *
+   * @param folder id
+   * @param float $latitude
+   * @param float $longitude
+   * @return boolean loaded?
+   */
+  function loadMarkerInPolygon($folderId, $latitude, $longitude) {
+
+    if ($this->outputObj->checkSpatialPointInPolygon($folderId, $latitude, $longitude)) {
+
+      $this->outputObj->markers[0] = array(
+        'marker_id' => 0,
+        'marker_folder' => 0,
+        'marker_title' => 'Selection',
+        'marker_desc' => NULL,
+        'marker_icon' => NULL,
+        'marker_lat' => $latitude,
+        'marker_lng' => $longitude
+      );
+      $this->outputObj->markersCount = 1;
+      return TRUE;
+    }
+    return FALSE;
   }
 
 }

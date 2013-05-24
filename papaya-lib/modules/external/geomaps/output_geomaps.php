@@ -2,7 +2,7 @@
 /**
  * Output class for geo maps content
  *
- * @copyright 2007 by Martin Kelm - All rights reserved.
+ * @copyright 2007-2009 by Martin Kelm - All rights reserved.
  * @link http://www.idxsolutions.de
  * @licence GNU General Public Licence (GPL) 2 http://www.gnu.org/copyleft/gpl.html
  *
@@ -13,8 +13,6 @@
  * FOR A PARTICULAR PURPOSE.
  *
  * @package module_geomaps
- * @author Martin Kelm <martinkelm@idxsolutions.de>
- * @author Bastian Feder <info@papaya-cms.com> <extensions>
  */
 
 /**
@@ -26,8 +24,6 @@ require_once(dirname(__FILE__).'/base_geomaps.php');
 * Output for geo maps content
 *
 * @package module_geomaps
-* @author Martin Kelm <martinkelm@idxsolutions.de>
-* @author Bastian Feder <info@papaya-cms.com> <extensions>
 */
 class output_geomaps extends base_geomaps {
 
@@ -44,6 +40,20 @@ class output_geomaps extends base_geomaps {
    * @var arra $data
    */
   var $data = NULL;
+
+  /**
+   * Modules db table to load dynamic image modules
+   *
+   * @var string $tableModules
+   */
+  var $tableModules = PAPAYA_DB_TBL_MODULES;
+
+  /**
+   * Module groups db table to load dynamic image modules
+   *
+   * @var string $tableModuleGroups
+   */
+  var $tableModuleGroups = PAPAYA_DB_TBL_MODULEGROUPS;
 
   /**
    * Main constructor
@@ -223,7 +233,8 @@ class output_geomaps extends base_geomaps {
    *
    * @param integer $pageId Page which contains markers data.
    * @param string $viewMode View mode to get markers data.
-   * @param integer $folderId Folder to get markers from.
+   * @param string $ressourceType set a specific ressource type, i.e. folder
+   * @param integer $ressourceId i.e. a folder id to get markers from.
    * @param string $mode Mode to show markers.
    * @param int $rotation Rotate markers.
    * @param int $showDescription Show description.
@@ -232,14 +243,16 @@ class output_geomaps extends base_geomaps {
    * @param string $color
    * @param return Status
    */
-  function setMarkersData($pageId, $viewMode, $folderId, $color, $mode, $rotation,
+  function setMarkersData($pageId, $viewMode, $ressourceType, $ressourceId,
+                          $color, $mode, $rotation,
                           $showDescription, $mouseDescAction, $zoomIntoFocus,
                           $polylineActive, $polylineColor, $polylineSize) {
 
     if ($pageId > 0 && !empty($viewMode) && !empty($mouseDescAction)) {
 
       $this->data['markers'] = array(
-        'folder_id' => $folderId, // int id
+        'ressource_type' => $ressourceType,
+        'ressource_id' => $ressourceId, // int id
         'mode' => $mode, // string mode
         'rotation' => $rotation, // int yes/no
         'show_description' => $showDescription, // int yes/no
@@ -393,7 +406,8 @@ class output_geomaps extends base_geomaps {
         $this->data['markers']['data_page']['page_id'], NULL,
         $this->data['markers']['data_page']['view_mode'],
         array(
-          'folder_id' => $this->data['markers']['folder_id'],
+          'ressource_type' => $this->data['markers']['ressource_type'],
+          'ressource_id' => $this->data['markers']['ressource_id'],
           'base_kml' => 1
         ), $this->paramName
       );
@@ -695,7 +709,8 @@ class output_geomaps extends base_geomaps {
 
       // load markers
       if (!(is_array($this->markers) && $this->markersCount > 0)) {
-        $this->loadMarkers($this->data['markers']['folder_id']);
+        // $this->data['markers']['ressource_id'] == folder!
+        $this->loadMarkers($this->data['markers']['ressource_id']);
       }
       if (is_array($this->markers) && $this->markersCount > 0) {
 
@@ -885,6 +900,40 @@ class output_geomaps extends base_geomaps {
           $selected, papaya_strings::escapeHTMLChars($color));
       }
     }
+    $result .= '</select>';
+    return $result;
+  }
+
+  function getDynamicImagesComboBox($name, $element, $data, $paramName) {
+    $result .= sprintf(
+      '<select name="%s[%s]" class="dialogSelect dialogScale">'.LF,
+      $paramName, $name);
+
+    $sql = "SELECT i.image_id, i.image_title
+              FROM %s i
+              JOIN %s m
+                ON (m.module_guid = i.module_guid
+                    AND m.module_type = 'image' AND m.module_active = 1)
+              JOIN %s mg
+                ON (mg.modulegroup_id = m.modulegroup_id
+                    AND mg.modulegroup_title = '%s')
+             ORDER BY i.image_title ASC";
+    $params = array($this->tableDynImages,
+      $this->tableModules, $this->tableModuleGroups, 'Geo maps');
+
+    if ($res = $this->databaseQueryFmt($sql, $params)) {
+      while ($row = $res->fetchRow(DB_FETCHMODE_ASSOC)) {
+
+        $selected = '';
+        if ($data == $row['image_id']) {
+          $selected = ' selected="selected"';
+        }
+
+        $result .= sprintf('<option value="%s"%s>%s</option>', $row['image_id'],
+          $selected, papaya_strings::escapeHTMLChars($row['image_title']));
+      }
+    }
+
     $result .= '</select>';
     return $result;
   }

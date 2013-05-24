@@ -1,7 +1,7 @@
 /**
 * Geo maps for papaya CMS 5: Markers script
 *
-* @copyright 2007 by Martin Kelm - All rights reserved.
+* @copyright 2007-2009 by Martin Kelm - All rights reserved.
 * @link http://www.idxsolutions.de
 * @licence GNU General Public Licence (GPL) 2 http://www.gnu.org/copyleft/gpl.html
 *
@@ -12,11 +12,14 @@
 * FOR A PARTICULAR PURPOSE.
 *
 * @package module_geomaps
-* @author Martin Kelm <martinkelm@idxsolutions.de>
-* @author Bastian Feder <info@papaya-cms.com> <extensions>
 */
 
 function addMarkers(url, params) {
+  // store var in global context
+  if (typeof window.geoMarkers == "undefined") {
+    window.geoMarkers = [];
+  }
+
   xmlDocument = getMarkersXML(url, params);
   if (xmlDocument) {
     parseMarkersXML(xmlDocument);
@@ -67,14 +70,25 @@ function getMarkersXML(url, params) {
 
 function parseMarkersXML(xmlData) {
   // store var in global context
-  window.markers = new Array();
+  geoMarkers[uniqueId] = new Array();
   var placemarkNodes = xmlData.getElementsByTagName("Placemark");
+
+  // tmp vars
+  var coordinates = null;
+  var description = null;
+  var iconImage = null;
+  var iconWidth = null;
+  var iconHeight = null;
+  var tmp = null;
+
   // go through placemarks nodes and set them into the markers array
   for (i = 0; i < placemarkNodes.length; i++) {
-    var coordinates = Array();
-    var description = '';
+    coordinates = Array();
+    description = '';
+    iconImage = '';
+
     // parse coordinates
-    var tmp = placemarkNodes[i].getElementsByTagName("Point")[0];
+    tmp = placemarkNodes[i].getElementsByTagName("Point")[0];
     if (tmp) {
       tmp = tmp.getElementsByTagName("coordinates")[0];
       if (tmp) {
@@ -84,18 +98,42 @@ function parseMarkersXML(xmlData) {
         }
       }
     }
-    // parse description
-    tmp = placemarkNodes[i].getElementsByTagName("description")[0];
-    if (tmp && tmp.hasChildNodes()) {
-      description = tmp.firstChild.data;
-    }
-    // set marker
+
+    // set marker data
     if (coordinates.length >= 2) {
-      markers[i] = Array();
-      markers[i][0] = 2;
-      markers[i][1] = description;
-      markers[i][2] = coordinates[1]; // Latitude
-      markers[i][3] = coordinates[0]; // Longitude
+      geoMarkers[uniqueId][i] = Array();
+      geoMarkers[uniqueId][i][0] = 2;
+
+      // parse description
+      tmp = placemarkNodes[i].getElementsByTagName("description")[0];
+      if (tmp && tmp.hasChildNodes()) {
+        description = tmp.firstChild.data;
+      }
+      if (description && description.length > 0) {
+        geoMarkers[uniqueId][i][1] = description;
+      }
+
+      geoMarkers[uniqueId][i][2] = coordinates[1]; // Latitude
+      geoMarkers[uniqueId][i][3] = coordinates[0]; // Longitude
+
+
+      // parse style / custom icon
+      tmp = placemarkNodes[i].getElementsByTagName("href")[0];
+      if (tmp && tmp.hasChildNodes() && tmp.childNodes[0].data != '') {
+        iconImage = tmp.childNodes[0].data;
+      }
+      tmp = placemarkNodes[i].getElementsByTagName("size")[0];
+      if (tmp) {
+        iconWidth = tmp.getAttribute('x');
+        iconHeight = tmp.getAttribute('y');
+      }
+      if (iconImage && iconImage.length > 0 && iconWidth > 0 && iconHeight > 0) {
+        geoMarkers[uniqueId][i][4] = new Array (iconImage, iconWidth, iconHeight); // icon
+      } else {
+        geoMarkers[uniqueId][i][4] = null;
+      }
+
+      geoMarkers[uniqueId][i][5] = null; // marker object
     }
   }
 }
@@ -104,6 +142,7 @@ function getMarkers(action, mode, setRotationTime, showDescription, zoomIntoFocu
   // store var in global context
   window.markerAction = action;
   description = '';
+
   if (mode == 'rotation') {
     if (typeof setRotationTime != "undefined" && setRotationTime > 0) {
       if (typeof markerRotationTime == "undefined") {
@@ -116,22 +155,18 @@ function getMarkers(action, mode, setRotationTime, showDescription, zoomIntoFocu
       rotateMarker(0);
     }
   } else {
-    if (typeof markers != "undefined") {
-      for (var i = 0; i < markers.length; i++) {
+    if (typeof geoMarkers[uniqueId] != "undefined") {
+      for (var i = 0; i < geoMarkers[uniqueId].length; i++) {
 
-        if (typeof showDescription != "undefined" && showDescription > 0) {
-          var description = markers[i][1];
+
+        if (!(typeof showDescription != "undefined" && showDescription > 0)) {
+          geoMarkers[uniqueId][i][1] = null;
         }
-
-        setMarker(
-          getMarkerPoint(markers[i][2], markers[i][3]),
-          description,
-          color
-        );
+        geoMarkers[uniqueId][i][5] = setMarker(false, i);
       }
 
       if (typeof zoomIntoFocus != "undefined" && zoomIntoFocus > 0 &&
-          markers.length > 1) {
+          geoMarkers[uniqueId].length > 0) {
         correctZoomLevel();
       }
     }
@@ -139,7 +174,7 @@ function getMarkers(action, mode, setRotationTime, showDescription, zoomIntoFocu
 }
 
 function getPolyline(color, width) {
-  if (typeof markers != "undefined" && markers.length > 0) {
+  if (typeof geoMarkers[uniqueId] != "undefined" && geoMarkers[uniqueId].length > 0) {
     setPolyline(color);
   }
 }
@@ -150,12 +185,12 @@ function getPolyline(color, width) {
  * @see zoomIntoFocus() in Google / Yahoo Maps script
  */
 function correctZoomLevel() {
-  if (typeof markers != "undefined") {
+  if (typeof geoMarkers[uniqueId] != "undefined") {
     var marker = [];
 
-    for (var i = 0; i < markers.length; i++) {
-      marker[0]= markers[i][2]; // latitude
-      marker[1]= markers[i][3]; // longitude
+    for (var i = 0; i < geoMarkers[uniqueId].length; i++) {
+      marker[0] = geoMarkers[uniqueId][i][2]; // latitude
+      marker[1] = geoMarkers[uniqueId][i][3]; // longitude
       zoomIntoFocus(marker);
     }
   }

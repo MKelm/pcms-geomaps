@@ -2,7 +2,7 @@
 /**
  * Connector for Geo Maps
  *
- * @copyright 2008 by Martin Kelm - All rights reserved.
+ * @copyright 2007-2009 by Martin Kelm - All rights reserved.
  * @link http://www.idxsolutions.de
  * @licence GNU General Public Licence (GPL) 2 http://www.gnu.org/copyleft/gpl.html
  *
@@ -13,7 +13,6 @@
  * FOR A PARTICULAR PURPOSE.
  *
  * @package module_geomaps
- * @author Martin Kelm <kelm@idxsolutions.de>
  */
 
 /**
@@ -32,7 +31,6 @@ require_once(PAPAYA_INCLUDE_PATH.'system/base_plugin.php');
  * );
  *
  * @package module_geomaps
- * @author Martin Kelm <kelm@idxsolutions.de>
  */
 class connector_geomaps extends base_plugin {
 
@@ -90,8 +88,19 @@ class connector_geomaps extends base_plugin {
                      $description = NULL, $street = NULL, $house = NULL,
                      $zip = NULL, $city = NULL, $country = NULL) {
     $baseObj = &$this->getBaseObject();
-    return $baseObj->setMarker($folderId, $title, $lat, $lng, $description,
-      $street, $house, $zip, $city, $country, TRUE, NULL);
+    return $baseObj->setMarker($folderId, $title, $lat, $lng, $icon,
+      $description, $street, $house, $zip, $city, $country, TRUE, NULL);
+  }
+
+  /**
+   * Deletes a single marker.
+   *
+   * @param integer $markerId
+   * @return status boolean
+   */
+  function deleteMarker($markerId) {
+    $baseObj = &$this->getBaseObject();
+    return $baseObj->deleteMarker($markerId);
   }
 
   /**
@@ -107,6 +116,19 @@ class connector_geomaps extends base_plugin {
       return $baseObj->markers[$markerId];
     }
     return NULL;
+  }
+
+  /**
+   * Uses coordinates to validate this position inside of a given polygon.
+   *
+   * @param float $latitude i.e. 49.488155742041045
+   * @param float $longitude i.e. 8.465939998495742
+   * @param integer $folderId unique folder id
+   * @return boolean point is within polygon
+   */
+  function checkSpatialPointInPolygon($latitude, $longitude, $folderId) {
+    $baseObj = &$this->getBaseObject();
+    return $baseObj->checkSpatialPointInPolygon($latitude, $longitude, $folderId);
   }
 
 }

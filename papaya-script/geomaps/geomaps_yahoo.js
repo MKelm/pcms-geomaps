@@ -1,7 +1,7 @@
 /**
 * Geo maps for papaya CMS 5: Yahoo Maps script
 *
-* @copyright 2007 by Martin Kelm - All rights reserved.
+* @copyright 2007-2009 by Martin Kelm - All rights reserved.
 * @link http://www.idxsolutions.de
 * @licence GNU General Public Licence (GPL) 2 http://www.gnu.org/copyleft/gpl.html
 *
@@ -12,7 +12,6 @@
 * FOR A PARTICULAR PURPOSE.
 *
 * @package module_geomaps
-* @author Martin Kelm <martinkelm@idxsolutions.de>
 */
 
 function initYahooMaps(showCoor, zoomControl, panControl, typeControl,
@@ -66,8 +65,10 @@ function initYahooMaps(showCoor, zoomControl, panControl, typeControl,
 
 function centerMap(lat, lng, zoom, mapType) {
   var point = new YGeoPoint(parseFloat(lat), parseFloat(lng));
-  if (point) {
+  if (point && zoom) {
     yahooMap[uniqueId].drawZoomAndCenter(point, zoom);
+  } else if (point) {
+    yahooMap[uniqueId].drawZoomAndCenter(point);
   }
   if (mapType) {
     yahooMap[uniqueId].setMapType(mapType);
@@ -78,17 +79,28 @@ function getMarkerPoint(lat, lng) {
   return new YGeoPoint(parseFloat(lat), parseFloat(lng));
 }
 
-function setMarker(point, text, color) {
-  if (typeof point != "undefined") {
+function setMarker(point, markerIdx) {
+  if (!point) {
+    var point = new GLatLng(parseFloat(geoMarkers[uniqueId][markerIdx][2]),
+                            parseFloat(geoMarkers[uniqueId][markerIdx][3]));
+  }
+
+  if (point) {
     var marker = new YMarker(point);
-    if (typeof text != "undefined" && text.length > 0) {
+
+    // set marker with or without description text
+    if (geoMarkers[uniqueId][markerIdx][1]
+        && geoMarkers[uniqueId][markerIdx][1].length > 0) {
+
       if (markerAction == 'click') {
         YEvent.Capture(marker, EventsList.MouseClick, function() {
-          marker.openSmartWindow(text);
+          markerListenerEvent(markerIdx);
+          marker.openSmartWindow(geoMarkers[uniqueId][markerIdx][1]);
         });
       } else {
         YEvent.Capture(marker, EventsList.MouseOver, function() {
-          marker.openSmartWindow(text);
+          markerListenerEvent(markerIdx);
+          marker.openSmartWindow(geoMarkers[uniqueId][markerIdx][1]);
         });
       }
     }
@@ -97,20 +109,19 @@ function setMarker(point, text, color) {
   }
 }
 
+function markerListenerEvent(markerIdx) { }
+
 function rotateMarker(i) {
-  var point = new YGeoPoint(markers[i][2], markers[i][3]);
-  var marker = null;
-  if (typeof markers[i][1] != "undefined") {
-    marker = setMarker(point, markers[i][1]);
-  } else {
-    marker = setMarker(point);
-  }
-  if (typeof marker == "object") {
+  var point = new YGeoPoint(geoMarkers[uniqueId][i][2], geoMarkers[uniqueId][i][3]);
+  geoMarkers[uniqueId][i][5] = setMarker(point, i);
+
+  if (typeof geoMarkers[uniqueId][i][5] == "object") {
     yahooMap[uniqueId].drawZoomAndCenter(point, yahooMap[uniqueId].getZoomLevel());
     setTimeout(function() {
       marker.closeSmartWindow();
-      yahooMap[uniqueId].removeOverlay(marker);
-      if (i < markers.length-1) {
+      yahooMap[uniqueId].removeOverlay(geoMarkers[uniqueId][i][5]);
+      geoMarkers[uniqueId][i][5] = null;
+      if (i < geoMarkers[uniqueId].length-1) {
         rotateMarker(i+1);
       } else {
         rotateMarker(0);
@@ -121,8 +132,8 @@ function rotateMarker(i) {
 
 function setPolyline(color, width) {
   var points = new Array();
-  for (i = 0; i < markers.length; i++) {
-    points[i] = new YGeoPoint(markers[i][2], markers[i][3]);
+  for (i = 0; i < geoMarkers[uniqueId].length; i++) {
+    points[i] = new YGeoPoint(geoMarkers[uniqueId][i][2], geoMarkers[uniqueId][i][3]);
   }
   var polyline = new YPolyline(points, color, 5, 0.6);
   yahooMap[uniqueId].addOverlay(polyline);
@@ -136,19 +147,19 @@ function setPolyline(color, width) {
 function correctZoomLevel() {
   // do not zoom higher than the world view ;)
   if (yahooMap[uniqueId].getZoomLevel() == 12) {
-    return 0
+    return 0;
   }
 
   return 1;
 }
 
-function coorModeAction(x, y) {
+function coorModeAction(lng, lat) {
   if (document.getElementById) {
     var coorElement = document.getElementById("coor_"+uniqueId);
   } else if (document.all) {
     var coorElement = document.all["coor_"+uniqueId];
   }
   if (typeof coorElement != "undefined") {
-    coorElement.innerHTML = 'Latitude: '+y+' / '+'Longitude: '+x;
+    coorElement.innerHTML = 'Latitude: '+lat+' / '+'Longitude: '+lng;
   }
 }

@@ -2,7 +2,7 @@
 /**
 * Administration backend for geo maps
 *
-* @copyright 2007-2008 by Martin Kelm - All rights reserved.
+* @copyright 2007-2009 by Martin Kelm - All rights reserved.
 * @link http://www.idxsolutions.de
 * @licence GNU General Public Licence (GPL) 2 http://www.gnu.org/copyleft/gpl.html
 *
@@ -13,7 +13,6 @@
 * FOR A PARTICULAR PURPOSE.
 *
 * @package module_geomaps
-* @author Martin Kelm <martinkelm@idxsolutions.de>
 */
 
 /**
@@ -25,7 +24,6 @@ require_once(dirname(__FILE__).'/base_geomaps.php');
 * Administration backend for geo maps
 *
 * @package module_geomaps
-* @author Martin Kelm <martinkelm@idxsolutions.de>
 */
 class admin_geomaps extends base_geomaps {
 
@@ -89,7 +87,10 @@ class admin_geomaps extends base_geomaps {
     );
 
     // get basic contents
-    switch (@$this->params['mode']) {
+    if (!isset($this->params['mode'])) {
+      $this->params['mode'] = '';
+    }
+    switch ($this->params['mode']) {
     case 1:
       // load keys for list view
       $this->loadKeys();
@@ -97,15 +98,22 @@ class admin_geomaps extends base_geomaps {
     default:
       // load folders for list view
       $this->loadFolders();
-      $this->loadMarkers(@$this->params['folder_id']);
+      $this->loadMarkers((isset($this->params['folder_id']))
+        ? $this->params['folder_id'] : NULL);
       break;
     }
   }
 
   function execute() {
-    switch (@$this->params['mode']) {
+    if (!isset($this->params['mode'])) {
+      $this->params['mode'] = '';
+    }
+    if (!isset($this->params['cmd'])) {
+      $this->params['cmd'] = '';
+    }
+    switch ($this->params['mode']) {
     case 1:
-      switch (@$this->params['cmd']) {
+      switch ($this->params['cmd']) {
       case 'add_key':
         if ($this->module->hasPerm(4, FALSE)) {
           $this->execAddKey();
@@ -122,8 +130,9 @@ class admin_geomaps extends base_geomaps {
         }
         break;
       }
+      break;
     default:
-      switch (@$this->params['cmd']) {
+      switch ($this->params['cmd']) {
       case 'add_folder':
         if ($this->module->hasPerm(2, FALSE)) {
           $this->execAddFolder();
@@ -178,8 +187,75 @@ class admin_geomaps extends base_geomaps {
           $this->execExportMarkers();
         }
         break;
+      case 'generate_spatial_polygon':
+        if ($this->module->hasPerm(5, FALSE)) {
+          $this->execGenerateSpatialPolygon();
+        }
+        break;
+      case 'generate_spatial_points':
+        if ($this->module->hasPerm(5, FALSE)) {
+          $this->execGenerateSpatialPoints();
+        }
+        break;
       }
     }
+  }
+
+  /**
+   * Exectute spatial polygon generation to perform further spatial validations.
+   *
+   * @return boolean generated?
+   */
+  function execGenerateSpatialPolygon() {
+    $success = FALSE;
+
+    if (isset($this->params['folder_id']) && $this->params['folder_id'] > 0
+        && isset($this->folders[$this->params['folder_id']])
+        && isset($this->params['confirmed']) && $this->params['confirmed'] == 1) {
+
+      if (TRUE === $this->generateSpatialPolygonsByFolders($this->params['folder_id'])) {
+        $this->addMsg(MSG_INFO, sprintf(
+          $this->_gt('The spatial polygon "%s" for "%s" (%d) has been generated.'),
+          md5(sprintf('geomaps_folder_%d', $this->params['folder_id'])),
+          $this->folders[$this->params['folder_id']]['folder_title'], $this->params['folder_id']
+        ));
+      } else {
+        $this->addMsg(MSG_INFO, sprintf(
+          $this->_gt('An error occured. No spatial polygon for "%s" (%d) has been generated.'),
+          $this->folders[$this->params['folder_id']]['folder_title'], $this->params['folder_id']
+        ));
+      }
+    }
+
+    return $success;
+  }
+
+  /**
+   * Exectute spatial points generation to perform further spatial calculations.
+   *
+   * @return boolean generated?
+   */
+  function execGenerateSpatialPoints() {
+    $success = FALSE;
+
+    if (isset($this->params['folder_id']) && $this->params['folder_id'] > 0
+        && isset($this->folders[$this->params['folder_id']])
+        && isset($this->params['confirmed']) && $this->params['confirmed'] == 1) {
+
+      if (TRUE === $this->generateSpatialPointsByFolders($this->params['folder_id'])) {
+        $this->addMsg(MSG_INFO, sprintf(
+          $this->_gt('The spatial points for "%s" (%d) has been generated.'),
+          $this->folders[$this->params['folder_id']]['folder_title'], $this->params['folder_id']
+        ));
+      } else {
+        $this->addMsg(MSG_INFO, sprintf(
+          $this->_gt('An error occured. No spatial points for "%s" (%d) has been generated.'),
+          $this->folders[$this->params['folder_id']]['folder_title'], $this->params['folder_id']
+        ));
+      }
+    }
+
+    return $success;
   }
 
   function execAddKey() {
@@ -294,7 +370,7 @@ class admin_geomaps extends base_geomaps {
         foreach ($this->markers as $markerId => $marker) {
           $this->deleteMarker($markerId);
         }
-        $this->loadMarkers();
+        $this->loadMarkers($this->params['folder_id']);
       }
 
       if (isset($this->params['folder_id']) && $this->params['folder_id'] > 0
@@ -321,17 +397,10 @@ class admin_geomaps extends base_geomaps {
           && $this->addMarkerDialog->modified()
           && $this->addMarkerDialog->checkDialogInput()) {
 
-        if ($this->params['marker_lat'] != 0 && $this->params['marker_lng'] != 0) {
-          $this->saveMarker($this->params, $this->addMarkerDialog->data, TRUE);
-          $this->initAddMarkerDialog(FALSE);
-          $this->loadMarkers($this->params['folder_id']);
+        $this->saveMarker($this->params, $this->addMarkerDialog->data, TRUE);
+        $this->initAddMarkerDialog(FALSE);
+        $this->loadMarkers($this->params['folder_id']);
 
-        }  else {
-          $this->addMsg(MSG_ERROR,
-            $this->_gt('Coordinates are not set properly.'));
-          $this->addMsg(MSG_INFO,
-            $this->_gt('Use the last field to get coordinates if you have none.'));
-        }
       }
 
       if (!isset($this->params['save']) || !$this->params['save']) {
@@ -356,16 +425,8 @@ class admin_geomaps extends base_geomaps {
             && $this->editMarkerDialog->modified()
             && $this->editMarkerDialog->checkDialogInput()) {
 
-          if ($this->params['marker_lat'] != 0 && $this->params['marker_lng'] != 0) {
             $this->saveMarker($this->params, $this->editMarkerDialog->data, FALSE);
             $this->loadMarkers($this->params['folder_id']);
-
-          } else {
-            $this->addMsg(MSG_ERROR,
-              $this->_gt('Coordinates are not set properly.'));
-            $this->addMsg(MSG_INFO,
-              $this->_gt('Use the address field to get coordinates if you have none.'));
-          }
         }
 
         $host = $_SERVER['HTTP_HOST'];
@@ -465,9 +526,15 @@ class admin_geomaps extends base_geomaps {
 
   function getXML() {
     $this->getBars();
-    switch (@$this->params['mode']) {
+    if (!isset($this->params['mode'])) {
+      $this->params['mode'] = '';
+    }
+    if (!isset($this->params['cmd'])) {
+      $this->params['cmd'] = '';
+    }
+    switch ($this->params['mode']) {
     case 1:
-      switch (@$this->params['cmd']) {
+      switch ($this->params['cmd']) {
       case 'add_key':
         if ($this->module->hasPerm(4, FALSE)) {
           $this->getAddKeyDialog();
@@ -500,7 +567,7 @@ class admin_geomaps extends base_geomaps {
       $this->layout->addLeft($result);
       break;
     default:
-      switch (@$this->params['cmd']) {
+      switch ($this->params['cmd']) {
       case 'add_folder':
         if ($this->module->hasPerm(2, FALSE)) {
           $this->getAddFolderDialog();
@@ -537,6 +604,21 @@ class admin_geomaps extends base_geomaps {
           }
         }
         break;
+      case 'generate_spatial_points':
+        if ($this->module->hasPerm(5, FALSE)) {
+          if (!isset($this->params['confirmed']) ||
+              (int)$this->params['confirmed'] == 0) {
+            $this->getGenerateSpatialPointsDialog();
+          }
+        }
+        break;
+      case 'generate_spatial_polygon':
+        if ($this->module->hasPerm(5, FALSE)) {
+          if (!isset($this->params['confirmed']) ||
+              (int)$this->params['confirmed'] == 0) {
+            $this->getGenerateSpatialPolygonDialog();
+          }
+        }
       }
       $this->getFoldersList();
 
@@ -569,7 +651,10 @@ class admin_geomaps extends base_geomaps {
       $menubar->addSeperator();
     }
 
-    switch (@$this->params['mode']) {
+    if (!isset($this->params['mode'])) {
+      $this->params['mode'] = '';
+    }
+    switch ($this->params['mode']) {
     case 1:
       if ($this->module->hasPerm(4, FALSE)) {
         $menubar->addButton('Add key',
@@ -591,6 +676,8 @@ class admin_geomaps extends base_geomaps {
       break;
     default:
       if ($this->module->hasPerm(2, FALSE)) {
+        $spatialFunctions = $this->getOption('spatial_functions', 0);
+
         $menubar->addButton('Add folder',
           $this->getLink(array('cmd' => 'add_folder')),
             'actions-folder-add', '',
@@ -613,6 +700,22 @@ class admin_geomaps extends base_geomaps {
               'actions-folder-delete', '',
               ($hasCmdParam && $this->params['cmd'] == 'del_folder')
             );
+
+          if ($spatialFunctions == 1 &&
+              isset($this->markers) && count($this->markers) > 0
+              && $this->module->hasPerm(5, FALSE)) {
+            $menubar->addSeperator();
+
+            $menubar->addButton('Generate spatial polygon',
+              $this->getLink(array(
+                  'cmd' => 'generate_spatial_polygon',
+                  'folder_id' => $this->params['folder_id']
+              )),
+              'actions-database-refresh', '',
+              ($hasCmdParam && $this->params['cmd'] == 'generate_spatial_polygon')
+            );
+
+          }
         }
 
         $toolbar = &new base_btnbuilder;
@@ -628,11 +731,12 @@ class admin_geomaps extends base_geomaps {
             && $hasCmdParam && $this->params['cmd'] == 'edit_marker') {
           $toolbar->addButton('Delete marker',
             $this->getLink(array(
-                'cmd' => 'del_marker',
-                'marker_id' => $this->params['marker_id'])),
-              'actions-tag-delete', '',
-              ($hasCmdParam && $this->params['cmd'] == 'del_marker')
-            );
+              'cmd' => 'del_marker',
+              'marker_id' => $this->params['marker_id'])
+            ),
+            'actions-tag-delete', '',
+            ($hasCmdParam && $this->params['cmd'] == 'del_marker')
+          );
         }
       }
 
@@ -653,6 +757,23 @@ class admin_geomaps extends base_geomaps {
           $this->getLink(array('cmd' => 'export_markers')),
           $this->localImages['export']);
       }
+
+      if ($spatialFunctions == 1 &&
+          isset($this->markers) && count($this->markers) > 0 &&
+          $this->module->hasPerm(5, FALSE)) {
+
+        $toolbar->addSeperator();
+
+        $toolbar->addButton('Generate spatial points',
+          $this->getLink(array(
+            'cmd' => 'generate_spatial_points',
+            'folder_id' => $this->params['folder_id']
+          )),
+          'actions-database-refresh', '',
+          ($hasCmdParam && $this->params['cmd'] == 'generate_spatial_points')
+        );
+      }
+
 
       if ($str = $toolbar->getXML()) {
         $this->layout->add(sprintf('<toolbar>%s</toolbar>'.LF, $str));
@@ -678,7 +799,8 @@ class admin_geomaps extends base_geomaps {
       if ($hasFolder === TRUE) {
         $folder = &$this->folders[$this->params['folder_id']];
         $data = array(
-          'folder_title' => $folder['folder_title']
+          'folder_title' => $folder['folder_title'],
+          'folder_marker_icon' => $folder['folder_marker_icon']
         );
       }
     }
@@ -690,7 +812,10 @@ class admin_geomaps extends base_geomaps {
     );
     $fields = array(
       'folder_title' => array(
-        'Title', 'isAlphaNum', TRUE, 'input', 200
+        'Title', 'isAlphaNum', TRUE, 'input', 200,
+      ),
+      'folder_marker_icon' => array(
+        'Global Marker Icon', 'isAlphaNum', FALSE, 'mediafile', 200
       )
     );
 
@@ -748,7 +873,7 @@ class admin_geomaps extends base_geomaps {
   function getDeleteFolderDialog() {
     include_once(PAPAYA_INCLUDE_PATH.'system/base_msgdialog.php');
     $hidden = array(
-      'cmd'     => $this->params['cmd'],
+      'cmd' => $this->params['cmd'],
       'folder_id' => $this->params['folder_id'],
       'confirm_delete' => 1
     );
@@ -826,8 +951,8 @@ class admin_geomaps extends base_geomaps {
     if ($hasKey === TRUE) {
       $key = &$this->keys[$this->params['key_id']];
       $data = array(
-        'key_type'  => $key['key_type'],
-        'key_host'  => $key['key_host'],
+        'key_type' => $key['key_type'],
+        'key_host' => $key['key_host'],
         'key_value' => $key['key_value']
       );
       $hidden = array(
@@ -885,9 +1010,9 @@ class admin_geomaps extends base_geomaps {
     if ($hasKey === TRUE) {
       $key = &$this->keys[$this->params['key_id']];
       $hidden = array(
-        'cmd'            => $this->params['cmd'],
-        'key_id'         => $key['key_id'],
-        'key_type'       => $key['key_type'],
+        'cmd' => $this->params['cmd'],
+        'key_id' => $key['key_id'],
+        'key_type' => $key['key_type'],
         'confirm_delete' => 1
       );
       $apiTitle = ($key['key_type'] == 0) ? 'Google Maps API' :
@@ -895,6 +1020,56 @@ class admin_geomaps extends base_geomaps {
 
       $msg = sprintf($this->_gt('Do you want to delete the %s key (%d)?'),
         $apiTitle, $this->params['key_id']);
+
+      $this->dialog = &new base_msgdialog($this, $this->paramName,
+        $hidden, $msg, 'question');
+      $this->dialog->buttonTitle = $this->_gt('Yes');
+
+      $this->layout->add($this->dialog->getMsgDialog());
+    }
+  }
+
+  /**
+   * Get a message dialog to confirm spatial polygon generation.
+   */
+  function getGenerateSpatialPolygonDialog() {
+    include_once(PAPAYA_INCLUDE_PATH.'system/base_msgdialog.php');
+    if (isset($this->params['folder_id']) && $this->params['folder_id'] > 0
+        && $this->folders[$this->params['folder_id']]) {
+
+      $hidden = array(
+        'cmd' => $this->params['cmd'],
+        'folder_id' => $this->params['folder_id'],
+        'confirmed' => 1
+      );
+
+      $msg = sprintf($this->_gt('Do you want to generate a spatial polygon for "%s" (%d)?'),
+        $this->folders[$this->params['folder_id']]['folder_title'], $this->params['folder_id']);
+
+      $this->dialog = &new base_msgdialog($this, $this->paramName,
+        $hidden, $msg, 'question');
+      $this->dialog->buttonTitle = $this->_gt('Yes');
+
+      $this->layout->add($this->dialog->getMsgDialog());
+    }
+  }
+
+  /**
+   * Get a message dialog to confirm spatial points generation.
+   */
+  function getGenerateSpatialPointsDialog() {
+    include_once(PAPAYA_INCLUDE_PATH.'system/base_msgdialog.php');
+    if (isset($this->params['folder_id']) && $this->params['folder_id'] > 0
+        && $this->folders[$this->params['folder_id']]) {
+
+      $hidden = array(
+        'cmd' => $this->params['cmd'],
+        'folder_id' => $this->params['folder_id'],
+        'confirmed' => 1
+      );
+
+      $msg = sprintf($this->_gt('Do you want to generate spatial points for "%s" (%d)?'),
+        $this->folders[$this->params['folder_id']]['folder_title'], $this->params['folder_id']);
 
       $this->dialog = &new base_msgdialog($this, $this->paramName,
         $hidden, $msg, 'question');
@@ -920,18 +1095,13 @@ class admin_geomaps extends base_geomaps {
       'marker_title' => array(
         'Title', 'isAlphaNum', TRUE, 'input', 200
       ),
+      'marker_icon' => array(
+        'Icon', 'isAlphaNum', FALSE, 'mediafile', 200
+      ),
       'marker_desc' => array(
         'Description', 'isSomeText', FALSE, 'simplerichtext', 6
       ),
-      'Coordinates',
-      'marker_lat' => array(
-        'Latitude', '/[\+\-]?\d+(\.\d+)?/', TRUE, 'input', 20, '',
-        0
-      ),
-      'marker_lng' => array(
-        'Longitude', '/[\+\-]?\d+(\.\d+)?/', TRUE, 'input', 20, '',
-        0
-      ),
+      'marker_location' => array('Coordinates', 'isGeoPos', FALSE, 'geopos', 200),
       'Address',
       'marker_addr_street' => array(
         'Street', 'isNoHTML', FALSE, 'input', 255
@@ -994,13 +1164,13 @@ class admin_geomaps extends base_geomaps {
       $data = array(
         'marker_title' => $marker['marker_title'],
         'marker_desc' => $marker['marker_desc'],
+        'marker_icon' => $marker['marker_icon'],
         'marker_addr_street' => $marker['marker_addr_street'],
         'marker_addr_house' => $marker['marker_addr_house'],
         'marker_addr_zip' => $marker['marker_addr_zip'],
         'marker_addr_city' => $marker['marker_addr_city'],
         'marker_addr_country' => $marker['marker_addr_country'],
-        'marker_lat' => $marker['marker_lat'],
-        'marker_lng' => $marker['marker_lng']
+        'marker_location' => $marker['marker_lat'].','.$marker['marker_lng']
       );
       $hidden = array(
         'cmd' => 'edit_marker',
@@ -1134,7 +1304,7 @@ class admin_geomaps extends base_geomaps {
     include_once(PAPAYA_INCLUDE_PATH.'system/base_msgdialog.php');
     $hidden = array(
       'cmd' => 'del_marker',
-      'marker_id' => @$this->params['marker_id'],
+      'marker_id' => (isset($this->params['marker_id'])) ? $this->params['marker_id'] : NULL,
       'confirm_delete' => 1,
     );
 
@@ -1366,9 +1536,13 @@ class admin_geomaps extends base_geomaps {
   }
 
   function saveFolder($params, $new = FALSE) {
+    $data = array(
+      'folder_title' => $params['folder_title'],
+      'folder_marker_icon' => $params['folder_marker_icon']
+    );
+
     if ($new) {
-      $newId = $this->databaseInsertRecord($this->tableFolders, 'folder_id',
-        array('folder_title' => $params['folder_title']));
+      $newId = $this->databaseInsertRecord($this->tableFolders, 'folder_id', $data);
       if ($newId !== FALSE && $newId > 0) {
         $this->addMsg(MSG_INFO, sprintf($this->_gt('Folder "%s" (%s) added.'),
           $params['folder_title'], $newId));
@@ -1377,7 +1551,6 @@ class admin_geomaps extends base_geomaps {
     } else {
       $this->addMsg(MSG_INFO, sprintf($this->_gt('Folder "%s" (%s) modified.'),
         $params['folder_title'], $params['folder_id']));
-      $data = array('folder_title' => $params['folder_title']);
       return (FALSE !== $this->databaseUpdateRecord($this->tableFolders,
         $data, 'folder_id', (int)$params['folder_id']));
     }
@@ -1454,22 +1627,29 @@ class admin_geomaps extends base_geomaps {
       $this->setSessionValue($this->sessionParamName, $this->sessionParams);
     }
 
+    $id = FALSE;
     $existingId = (!empty($params['marker_id']) && $new === FALSE)
       ? $params['marker_id'] : NULL;
+    $location = explode(',', $data['marker_location']);
 
-    $id = $this->setMarker(
-      $this->params['folder_id'],
-      $data['marker_title'],
-      $data['marker_lat'],
-      $data['marker_lng'],
-      $data['marker_desc'], // optional
-      $data['marker_addr_street'], // optional
-      $data['marker_addr_house'], // optional
-      $data['marker_addr_zip'], // optional
-      $data['marker_addr_city'], // optional
-      $data['marker_addr_country'], // optional
-      $new, $existingId // add or update
-    );
+    if (!empty($location) && is_array($location)
+        && !empty($location[0]) && !empty($location[1])) {
+
+      $id = $this->setMarker(
+        $this->params['folder_id'],
+        $data['marker_title'],
+        $location[0], // latitude
+        $location[1], // longitude
+        $data['marker_icon'], // optional
+        $data['marker_desc'], // optional
+        $data['marker_addr_street'], // optional
+        $data['marker_addr_house'], // optional
+        $data['marker_addr_zip'], // optional
+        $data['marker_addr_city'], // optional
+        $data['marker_addr_country'], // optional
+        $new, $existingId // add or update
+      );
+    }
 
     if ($new == TRUE && $id !== FALSE) {
       $this->addMsg(MSG_INFO, sprintf($this->_gt('Marker "%s" (%s) added.'),
@@ -1483,11 +1663,6 @@ class admin_geomaps extends base_geomaps {
 
     }
     return FALSE;
-  }
-
-  function deleteMarker($markerId) {
-    return $this->databaseDeleteRecord($this->tableMarkers,
-      'marker_id', $markerId);
   }
 
   function exportMarkersKML($folderTitle, $markers = NULL) {
@@ -1519,6 +1694,106 @@ class admin_geomaps extends base_geomaps {
 
       echo $result;
       exit;
+    }
+
+    return FALSE;
+  }
+
+  /**
+   * Generate spatial polygons by folder markers to perform further spatial validations.
+   *
+   * @param mixed $folderIds array or single folder id (int)
+   * @return boolean generated?
+   */
+  function generateSpatialPolygonsByFolders($folderIds) {
+    if (!empty($folderIds) && $this->initSpatialExtensions() === TRUE
+        && $this->spatialExtensions->createSpatialPolygonsTable()) {
+
+      if (!is_array($folderIds)) {
+        $folderIds = array($folderIds);
+      }
+      $result = TRUE;
+
+      foreach ($folderIds as $folderId) {
+
+        $sql = "SELECT marker_id, marker_folder,
+                       marker_lat, marker_lng
+                  FROM %s
+                 WHERE marker_folder = %d
+                 ORDER BY marker_sort , marker_title ASC";
+        $params = array($this->tableMarkers, $folderId);
+
+        if ($res = $this->databaseQueryFmt($sql, $params)) {
+          $points = array();
+
+          while ($row = $res->fetchRow(DB_FETCHMODE_ASSOC)) {
+            $points[] = array($row['marker_lat'], $row['marker_lng']);
+          }
+
+          if (count($points) > 0) {
+            $this->spatialExtensions->removeSpatialPolygon($folderId);
+            return FALSE !== $this->spatialExtensions->insertSpatialPolygon($folderId, $points);
+          }
+          unset($points);
+        }
+      }
+
+      return $result;
+    }
+
+    return FALSE;
+  }
+
+  /**
+   * Generate spatial points by folder markers to perform further spatial calculations.
+   *
+   * @param mixed $folderIds array or single folder id (int)
+   * @return boolean generated?
+   */
+  function generateSpatialPointsByFolders($folderIds) {
+    if (!empty($folderIds) && $this->initSpatialExtensions() === TRUE
+        && $this->spatialExtensions->createSpatialPointsTable()) {
+
+      if (!is_array($folderIds)) {
+        $folderIds = array($folderIds);
+      }
+      $result = TRUE;
+
+      foreach ($folderIds as $folderId) {
+
+        $sql = "SELECT marker_id, marker_folder,
+                       marker_lat, marker_lng
+                  FROM %s
+                 WHERE marker_folder = %d
+                 ORDER BY marker_sort , marker_title ASC";
+        $params = array($this->tableMarkers, $folderId);
+
+        if ($res = $this->databaseQueryFmt($sql, $params)) {
+          $markers = array();
+
+          while ($row = $res->fetchRow(DB_FETCHMODE_ASSOC)) {
+            $markers[] = array(
+              $row['marker_folder'], $row['marker_id'],
+              $row['marker_lat'], $row['marker_lng']
+            );
+          }
+
+          if (count($markers) > 0) {
+            foreach ($markers as $idx => $marker) {
+              $this->spatialExtensions->removeSpatialPoint($marker[0], $marker[1]);
+
+              $result = $result && $this->spatialExtensions->insertSpatialPoint(
+                $marker[0], // folder id
+                $marker[1], // marker id
+                array($marker[2], $marker[3]) // latitude / longitude
+              );
+            }
+          }
+          unset($markers);
+        }
+      }
+
+      return $result;
     }
 
     return FALSE;

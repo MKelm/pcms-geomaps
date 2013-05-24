@@ -2,7 +2,7 @@
 /**
  * Admin module for geo maps
  *
- * @copyright 2007-2008 by Martin Kelm - All rights reserved.
+ * @copyright 2007-2009 by Martin Kelm - All rights reserved.
  * @link http://www.idxsolutions.de
  * @licence GNU General Public Licence (GPL) 2 http://www.gnu.org/copyleft/gpl.html
  *
@@ -13,7 +13,6 @@
  * FOR A PARTICULAR PURPOSE.
  *
  * @package module_geomaps
- * @author Martin Kelm <martinkelm@idxsolutions.de>
  */
 
 /**
@@ -25,7 +24,6 @@ require_once(PAPAYA_INCLUDE_PATH.'system/base_module.php');
  * Admin module for geo maps
  *
  * @package module_geomaps
- * @author Martin Kelm <martinkelm@idxsolutions.de>
  */
 class edmodule_geomaps extends base_module {
 
@@ -41,6 +39,9 @@ class edmodule_geomaps extends base_module {
       'Scripts path', 'isAlphaNumChar', TRUE, 'input', 200, NULL, '/'),
     'default_folder_title' => array(
       'Default folder title', 'isAlphaNumChar', TRUE, 'input', 200, NULL, 'No folder title'),
+    'spatial_functions' => array(
+      'Spatial Functions', 'isNum', TRUE, 'combo',
+      array(0 => 'Disabled', 1 => 'Enabled'), 'Needs MySQL 4.1 or higher', 0)
   );
 
   /**
@@ -52,7 +53,8 @@ class edmodule_geomaps extends base_module {
     1 => 'View',
     2 => 'Manage markers',
     3 => 'Export Markers',
-    4 => 'Manage keys'
+    4 => 'Manage keys',
+    5 => 'Generate spatial locations'
   );
 
   /**

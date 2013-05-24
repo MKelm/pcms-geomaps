@@ -1,13 +1,13 @@
 *Geo maps modules for papaya CMS 5*
 
-Revision 0.23, 2008-11-15
-
-Authors:
-Martin Kelm <martinkelm@idxsolutions.de>
-Bastian Feder <info@papaya-cms.com> <extensions>
+Revision 0.24, 2008-06-01
+(c) Martin Kelm <martinkelm@idxsolutions.de>
 
 Support and good fairy:
 geomaps@idxsolutions.de
+
+*Thanks to*
+Bastian Feder (extensions)
 
 *Templates*
 - "box_geomaps.xsl": use a text/html output filter
@@ -18,13 +18,22 @@ geomaps@idxsolutions.de
 GNU General Public Licence (GPL): gpl.txt
 
 *General todos / ideas / whishes*
-- More colors for dynamic markers
 - OpenLayers support
-- Use xslt parser for KML export
-- More export formats
-- Import for KML, ...
+- KML import ...
+- Use xslt parser for KML export?
 
 *Changelog*
+
+_Rev. 0.24 (2009-06-01)_
+- Fixed addMarker() in connector class
+- Added deleteMarker() in connector class
+- Use optional icon images for google maps from media db
+- Added module for dynamic icon images with anchors
+- Added MySQL spatial extensions support / interface
+- Added functions to generate / handle spatial polygons by folder
+- Added functions to generate / handle spatial points
+- Added support for multiple marker ressources
+- Some smaller improvements (i.e. code headers update)
 
 _Rev. 0.23 (2008-11-15)_
 - Added antoher connector method to get a marker by id

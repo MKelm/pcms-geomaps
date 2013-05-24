@@ -1,9 +1,14 @@
 <?xml version="1.0"?>
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 
-<!-- geo maps markers template, author: martin kelm -->
+  <!-- geo maps markers template -->
 
-<xsl:output method="xml" encoding="utf-8" standalone="no" indent="yes" omit-xml-declaration="no" />
+  <!--
+    NOTE: Use IE8 compatibility mode, to support coordinates click mode!
+    <xsl:comment> &lt;meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7"/&gt; </xsl:comment>
+  -->
+
+  <xsl:output method="xml" encoding="utf-8" standalone="no" indent="yes" omit-xml-declaration="no" />
 
   <xsl:template match="/page">
     <xsl:choose>
@@ -54,6 +59,10 @@
         <!-- longitude / latitude -->
         <xsl:if test="Point">
           <xsl:copy-of select="Point" />
+        </xsl:if>
+        <!-- style for custom icons -->
+        <xsl:if test="Style">
+          <xsl:copy-of select="Style" />
         </xsl:if>
       </Placemark>
     </xsl:for-each>
